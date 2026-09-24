@@ -32,12 +32,12 @@ Leyenda: `[ ]` pendiente · `[x]` completada · `[~]` en progreso
 - [x] Material toon con gradiente de 3–4 bandas
 
 ## Fase 3 — Mundo
-- [ ] Terreno ondulado con ruido y `getHeight(x, z)`
-- [ ] Camino de tierra con borde irregular mezclado con el césped
-- [ ] Cielo con degradado, nubes animadas y sol
-- [ ] Niebla con color del cielo
-- [ ] Luz direccional con sombras duras + luz ambiental/hemisférica
-- [ ] Ajustar frustum y bias de sombras
+- [x] Terreno ondulado con ruido y `getHeight(x, z)`
+- [x] Camino de tierra con borde irregular mezclado con el césped
+- [x] Cielo con degradado, nubes animadas y sol
+- [x] Niebla con color del cielo
+- [x] Luz direccional con sombras duras + luz ambiental/hemisférica
+- [x] Ajustar frustum y bias de sombras
 
 ## Fase 4 — Estructuras y niveles
 - [ ] Piezas `pillar`, `lintel`, `fallenStone`, `boulder` con deformación de vértices

@@ -10,7 +10,29 @@ export function createTextures() {
     stone: createPaletteTexture('stone', CONFIG.textures.stone),
     grass: createPaletteTexture('grass', CONFIG.textures.grass),
     dirt: createPaletteTexture('dirt', CONFIG.textures.dirt),
+    noise: createNoiseTexture('noise', CONFIG.textures.noise),
   };
+}
+
+// Ruido fbm repetible en escala de grises, con filtrado lineal (nubes, bordes).
+function createNoiseTexture(name, { size, frequency, octaves }) {
+  const noise = new ValueNoise2D(deriveSeed(CONFIG.seed, name));
+  const data = new Uint8Array(size * size);
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const v = noise.fbm((x / size) * frequency, (y / size) * frequency, { octaves, period: frequency });
+      data[y * size + x] = Math.round(v * 255);
+    }
+  }
+  const texture = new THREE.DataTexture(data, size, size, THREE.RedFormat);
+  texture.name = name;
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.magFilter = THREE.LinearFilter;
+  texture.minFilter = THREE.LinearFilter;
+  texture.generateMipmaps = false;
+  texture.needsUpdate = true;
+  return texture;
 }
 
 // Cada texel = color de la paleta elegido por ruido fbm (manchas) + ruido blanco (grano),

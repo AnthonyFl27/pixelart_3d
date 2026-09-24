@@ -5,54 +5,41 @@ import { GameLoop } from './core/loop.js';
 import { PixelPipeline } from './render/pixelPipeline.js';
 import { createTextures } from './world/textures.js';
 import { createMaterials } from './world/materials.js';
-import { applyBoxUVs } from './world/geometryUtils.js';
+import { Terrain } from './world/terrain.js';
+import { Sky } from './world/sky.js';
+import { Lighting } from './world/lighting.js';
+import { MEADOW } from './levels/meadow.js';
+
+const level = MEADOW;
 
 const canvas = document.getElementById('game');
 const renderer = createRenderer(canvas);
 const camera = createCamera();
 const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(CONFIG.fog.color, CONFIG.fog.near, CONFIG.fog.far);
 
-const { lighting } = CONFIG;
-scene.add(new THREE.HemisphereLight(lighting.skyColor, lighting.groundColor, lighting.hemiIntensity));
+const textures = createTextures();
+const materials = createMaterials(textures);
 
-const sun = new THREE.DirectionalLight(lighting.sunColor, lighting.sunIntensity);
-sun.position.set(lighting.sunDirection.x, lighting.sunDirection.y, lighting.sunDirection.z).multiplyScalar(20);
-scene.add(sun);
+const terrain = new Terrain(level, materials, textures);
+scene.add(terrain.mesh);
 
-const materials = createMaterials(createTextures());
+const sky = new Sky(textures.noise);
+scene.add(sky.mesh);
 
-// Escena de prueba provisional (se sustituye por el mundo en la fase 3).
-const testCubes = [];
-if (CONFIG.debug.testCube) {
-  const cubeGeometry = applyBoxUVs(new THREE.BoxGeometry(2, 2, 2));
-  [materials.grass, materials.stone, materials.dirt].forEach((material, i) => {
-    const cube = new THREE.Mesh(cubeGeometry, material);
-    cube.position.set((i - 1) * 3.5, 1.5, 0);
-    scene.add(cube);
-    testCubes.push(cube);
-  });
+const lighting = new Lighting(scene);
 
-  const pillar = new THREE.Mesh(applyBoxUVs(new THREE.BoxGeometry(1.4, 4, 1)), materials.stone);
-  pillar.position.set(0, 2, -6);
-  scene.add(pillar);
-
-  const sphere = new THREE.Mesh(new THREE.SphereGeometry(1.2, 24, 16), materials.stone);
-  sphere.position.set(7, 1.2, 2);
-  scene.add(sphere);
-
-  const groundGeometry = applyBoxUVs(new THREE.PlaneGeometry(60, 60).rotateX(-Math.PI / 2));
-  scene.add(new THREE.Mesh(groundGeometry, materials.grass));
-}
+const { spawn } = level;
+camera.position.set(spawn.x, terrain.getHeight(spawn.x, spawn.z) + CONFIG.player.eyeHeight, spawn.z);
+camera.rotation.set(0, spawn.yaw, 0);
 
 const pipeline = new PixelPipeline(renderer, scene, camera);
 onResize((width, height) => pipeline.resize(width, height));
 
 const loop = new GameLoop(renderer, {
   update(dt) {
-    for (const cube of testCubes) {
-      cube.rotation.x += dt * 0.3;
-      cube.rotation.y += dt * 0.5;
-    }
+    sky.update(dt, camera);
+    lighting.update(camera.position);
   },
   render() {
     pipeline.render();

@@ -20,6 +20,7 @@ export function createMaterials(textures) {
   const gradientMap = createToonGradient(CONFIG.lighting.toonSteps);
   const toon = (map) => new THREE.MeshToonMaterial({ map, gradientMap });
   return {
+    gradientMap,
     stone: toon(textures.stone),
     grass: toon(textures.grass),
     dirt: toon(textures.dirt),

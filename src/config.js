@@ -7,15 +7,17 @@ export const CONFIG = {
     // Altura en píxeles del render interno; el ancho se deriva del aspect ratio.
     pixelHeight: 270,
     maxPixelRatio: 1,
-    clearColor: 0x7fb4e0,
+    clearColor: 0xa9cdef,
+    // Ajusta la posición de la cámara a una rejilla de mundo para reducir el
+    // "shimmering" de texels al moverse (1 / texelsPerUnit = un texel).
+    cameraSnap: true,
+    cameraSnapUnit: 1 / 32,
   },
 
   camera: {
     fov: 70,
     near: 0.1,
     far: 400,
-    startPosition: { x: 0, y: 1.7, z: 12 },
-    lookAt: { x: 0, y: 1.5, z: 0 },
   },
 
   loop: {
@@ -25,18 +27,41 @@ export const CONFIG = {
 
   lighting: {
     sunColor: 0xfff2d6,
-    sunIntensity: 2.2,
-    sunDirection: { x: -0.5, y: 0.8, z: -0.4 },
-    skyColor: 0xbfdcff,
-    groundColor: 0x5a7a2a,
-    hemiIntensity: 1.0,
+    sunIntensity: 1.6,
+    // Dirección hacia el sol (desde el suelo). Debe coincidir con el sol del cielo.
+    sunDirection: { x: 0.35, y: 0.72, z: -0.6 },
+    skyColor: 0xdfeeff,
+    groundColor: 0x8a9a5a,
+    hemiIntensity: 2.0,
     toonSteps: 4,
+    shadow: {
+      mapSize: 2048,
+      extent: 45,       // semiancho (u) del área con sombras alrededor del jugador
+      distance: 80,     // distancia de la luz al centro del área de sombras
+      bias: -0.0005,
+      normalBias: 0.04,
+    },
   },
 
   fog: {
     color: 0xa9cdef,
-    near: 60,
-    far: 220,
+    near: 45,
+    far: 175,
+  },
+
+  sky: {
+    zenithColor: 0x3f7fc4,
+    horizonColor: 0xa9cdef, // igual que la niebla para fundir el horizonte
+    cloudColor: 0xf4f8fb,
+    cloudShadeColor: 0xb9cde2,
+    cloudScale: 0.12,
+    cloudStretch: 0.35,     // < 1 estira las nubes en horizontal (vetas)
+    cloudCoverage: 0.48,    // umbral del ruido: más alto = menos nubes
+    cloudSteps: 4,          // niveles de opacidad de las nubes (look pixel)
+    cloudWind: { x: 0.004, z: 0.0015 },
+    sunColor: 0xfff6e0,
+    sunSize: 0.035,         // radio angular del disco solar (rad)
+    sunGlowSize: 0.35,      // radio angular del halo (rad)
   },
 
   postfx: {
@@ -94,25 +119,62 @@ export const CONFIG = {
       speckleLight: 0.02,
       speckleDark: 0.04,
     },
+    // Textura de ruido suave (escala de grises) para nubes y borde del camino.
+    noise: {
+      size: 128,
+      frequency: 8,
+      octaves: 4,
+    },
   },
 
-  world: {
-    size: 300,
-    segments: 128,
+  terrain: {
+    size: 400,
+    segments: 160,
+    heightAmplitude: 1.8,  // altura máxima de las ondulaciones (u)
+    heightFrequency: 0.015,
+    octaves: 4,
+    flatRadius: 24,        // radio llano alrededor del centro del nivel
+    flatBlend: 30,         // transición de llano a ondulado
+  },
+
+  path: {
+    edgeNoise: 1.1,        // irregularidad del borde (u)
+    edgeNoiseScale: 0.18,  // frecuencia del ruido del borde
+  },
+
+  structures: {
+    sink: 0.25,            // cuánto se entierran las piezas en el suelo (u)
+    roughness: 0.07,       // deformación de vértices (u)
+    roughnessFrequency: 1.3,
+    taper: 0.12,           // estrechamiento de los pilares hacia arriba (0-1)
   },
 
   player: {
-    eyeHeight: 1.7,
+    eyeHeight: 1.6,
+    height: 1.8,
+    radius: 0.35,
+    stepHeight: 0.45,      // altura máxima que se sube sin saltar
     walkSpeed: 5,
     runSpeed: 9,
     flySpeed: 14,
-    jumpSpeed: 6,
-    gravity: 18,
+    groundAccel: 12,
+    airAccel: 3,
+    jumpSpeed: 6.5,
+    gravity: 20,
     mouseSensitivity: 0.0022,
+    maxPitch: 89,          // grados
+    boundsMargin: 20,      // distancia mínima al borde del terreno
+  },
+
+  audio: {
+    enabled: true,
+    masterVolume: 0.6,
+    windVolume: 0.3,
+    stepVolume: 0.5,
+    stepDistance: 1.9,     // metros recorridos entre pasos (andando)
   },
 
   debug: {
     showHud: false,
-    testCube: true,
   },
 };

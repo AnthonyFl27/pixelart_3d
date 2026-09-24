@@ -12,10 +12,9 @@ export function createRenderer(canvas) {
 }
 
 export function createCamera() {
-  const { fov, near, far, startPosition, lookAt } = CONFIG.camera;
+  const { fov, near, far } = CONFIG.camera;
   const camera = new THREE.PerspectiveCamera(fov, window.innerWidth / window.innerHeight, near, far);
-  camera.position.set(startPosition.x, startPosition.y, startPosition.z);
-  camera.lookAt(lookAt.x, lookAt.y, lookAt.z);
+  camera.rotation.order = 'YXZ';
   return camera;
 }
 
