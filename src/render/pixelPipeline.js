@@ -10,6 +10,7 @@ export class PixelPipeline {
     this.scene = scene;
     this.camera = camera;
     this.scale = 1;
+    renderer.info.autoReset = false;
 
     this.target = new THREE.WebGLRenderTarget(1, 1, {
       minFilter: THREE.NearestFilter,
@@ -87,6 +88,8 @@ export class PixelPipeline {
   }
 
   render() {
+    // Las estadísticas (draw calls) cubren el frame completo: sombras, escena y post-proceso.
+    this.renderer.info.reset();
     this.syncUniforms();
     this.renderer.setRenderTarget(this.target);
     this.renderer.render(this.scene, this.camera);

@@ -47,17 +47,17 @@ Leyenda: `[ ]` pendiente · `[x]` completada · `[~]` en progreso
 - [x] Cargador de nivel que instancia estructuras y registra colisionadores
 
 ## Fase 5 — Jugador y controles
-- [ ] `input.js` con teclado, ratón y Pointer Lock
-- [ ] Cámara primera persona (yaw/pitch limitado)
-- [ ] Movimiento con aceleración/fricción y correr
-- [ ] Gravedad, salto y seguimiento de altura del terreno
-- [ ] Modo vuelo (`F`)
-- [ ] Colisión contra estructuras (paso bajo dinteles)
+- [x] `input.js` con teclado, ratón y Pointer Lock
+- [x] Cámara primera persona (yaw/pitch limitado)
+- [x] Movimiento con aceleración/fricción y correr
+- [x] Gravedad, salto y seguimiento de altura del terreno
+- [x] Modo vuelo (`F`)
+- [x] Colisión contra estructuras (paso bajo dinteles)
 
 ## Fase 6 — UI
-- [ ] Pantalla de inicio "Clic para jugar"
-- [ ] Pausa con `Esc` y reanudar con clic
-- [ ] HUD de depuración (FPS, posición, modo) con `F3`
+- [x] Pantalla de inicio "Clic para jugar"
+- [x] Pausa con `Esc` y reanudar con clic
+- [x] HUD de depuración (FPS, posición, modo) con `F3`
 
 ## Fase 7 — Pulido y validación
 - [ ] Ajustar paleta, resolución pixel, sombras y niebla contra la referencia
@@ -67,5 +67,5 @@ Leyenda: `[ ]` pendiente · `[x]` completada · `[~]` en progreso
 - [ ] Actualizar `AGENTS.md` y `README.md`
 
 ## Opcional
-- [ ] Audio ambiente (viento, pasos)
-- [ ] Snap de cámara a la rejilla de píxeles para reducir shimmering
+- [x] Audio ambiente (viento, pasos)
+- [x] Snap de cámara a la rejilla de píxeles para reducir shimmering

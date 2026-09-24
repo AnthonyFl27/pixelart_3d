@@ -1,0 +1,94 @@
+// Estado de teclado y ratón. Las teclas se identifican por `KeyboardEvent.code`
+// (independiente de la distribución del teclado: 'KeyW', 'Space', 'ShiftLeft'...).
+
+const PREVENT_DEFAULT = new Set([
+  'Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'F3', 'ControlLeft', 'ControlRight',
+]);
+
+const MAX_MOUSE_DELTA = 250;
+
+export class Input {
+  constructor(element) {
+    this.element = element;
+    this.down = new Set();
+    this.pressed = new Set();
+    this.mouseX = 0;
+    this.mouseY = 0;
+    this.dragging = false;
+    this.listeners = { lockchange: [], keydown: [] };
+
+    window.addEventListener('keydown', (e) => {
+      if (PREVENT_DEFAULT.has(e.code)) e.preventDefault();
+      if (!e.repeat) this.pressed.add(e.code);
+      this.down.add(e.code);
+      this.emit('keydown', e.code);
+    });
+    window.addEventListener('keyup', (e) => this.down.delete(e.code));
+    window.addEventListener('blur', () => this.down.clear());
+
+    // Sin Pointer Lock (no soportado o denegado) se puede mirar arrastrando.
+    element.addEventListener('mousedown', () => { this.dragging = true; });
+    window.addEventListener('mouseup', () => { this.dragging = false; });
+    window.addEventListener('mousemove', (e) => {
+      if (!this.locked && !this.dragging) return;
+      // Algunos navegadores envían picos enormes de movementX/Y al capturar el ratón.
+      if (Math.abs(e.movementX) > MAX_MOUSE_DELTA || Math.abs(e.movementY) > MAX_MOUSE_DELTA) return;
+      this.mouseX += e.movementX;
+      this.mouseY += e.movementY;
+    });
+
+    document.addEventListener('pointerlockchange', () => {
+      this.consumeMouse();
+      this.emit('lockchange', this.locked);
+    });
+    document.addEventListener('pointerlockerror', () => this.emit('lockchange', false));
+  }
+
+  get locked() {
+    return document.pointerLockElement === this.element;
+  }
+
+  // Devuelve una promesa que se resuelve a true si se consiguió capturar el ratón.
+  async requestLock() {
+    if (!this.element.requestPointerLock) return false;
+    try {
+      await this.element.requestPointerLock();
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  exitLock() {
+    if (this.locked) document.exitPointerLock();
+  }
+
+  on(event, callback) {
+    this.listeners[event].push(callback);
+  }
+
+  emit(event, value) {
+    for (const callback of this.listeners[event]) callback(value);
+  }
+
+  isDown(...codes) {
+    return codes.some((code) => this.down.has(code));
+  }
+
+  // true solo en el frame en que se pulsó la tecla.
+  wasPressed(code) {
+    return this.pressed.has(code);
+  }
+
+  consumeMouse() {
+    const delta = { x: this.mouseX, y: this.mouseY };
+    this.mouseX = 0;
+    this.mouseY = 0;
+    return delta;
+  }
+
+  // Llamar al final de cada frame.
+  endFrame() {
+    this.pressed.clear();
+  }
+}
