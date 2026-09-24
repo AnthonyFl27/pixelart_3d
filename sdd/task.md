@@ -1,4 +1,4 @@
-# Tareas — Spec v1
+# Tareas — Spec v1 (completada)
 
 Leyenda: `[ ]` pendiente · `[x]` completada · `[~]` en progreso
 
@@ -70,3 +70,58 @@ Leyenda: `[ ]` pendiente · `[x]` completada · `[~]` en progreso
 ## Opcional
 - [x] Audio ambiente (viento, pasos)
 - [x] Snap de cámara a la rejilla de píxeles para reducir shimmering
+
+---
+
+# Tareas — Spec v2
+
+## Fase SDD v2
+- [x] Crear `sdd/specs/spec_v2.md`
+- [x] Añadir plan v2 a `sdd/plan.md`
+- [x] Añadir tareas v2 a `sdd/task.md`
+
+## Fase 8 — Sonido de pasos v2
+- [ ] Mover pasos a `src/audio/footsteps.js` con bus filtrado (paso bajo + compresor)
+- [ ] Síntesis por capas (talón + planta) con variación aleatoria
+- [ ] Sonido de césped suave
+- [ ] Sonido de tierra
+- [ ] Sonido de piedra y detección de superficie `stone` sobre estructuras
+- [ ] Volumen/ritmo según velocidad y paso de aterrizaje
+
+## Fase 9 — Ciclo día/noche
+- [ ] `dayCycle.js`: hora, fase y direcciones de sol/luna (día de 15 min configurable)
+- [ ] Keyframes de color por fase (cielo, horizonte, sol, ambiente, niebla) en `config.js`
+- [ ] Cielo: horizonte cálido del lado del sol en amanecer/atardecer
+- [ ] Sol y luna pixelados que salen y se ponen
+- [ ] Estrellas que aparecen, titilan y rotan
+- [ ] Nubes teñidas según la hora
+- [ ] Luz con sombras que sigue al sol o a la luna; ambiente, relleno y niebla por hora
+- [ ] HUD con hora y fase; tecla `T` para acelerar el tiempo
+
+## Fase 10 — Inventario y antorcha
+- [ ] `inventory.js` con 5 ranuras, teclas `1`–`5`, rueda y `Q`
+- [ ] `hotbar.js`: barra pixel art con iconos y ranura activa
+- [ ] Modelo de antorcha en primera persona con balanceo y sacar/guardar
+- [ ] Llama pixel art animada y chispas
+- [ ] Luz cálida con parpadeo que ilumina el entorno (sin sombras, siempre en escena)
+
+## Fase 11 — Entorno
+- [ ] Tipos `rubble`/`pebbles` y más rocas dispersas
+- [ ] Musgo/liquen en las piedras
+- [ ] Tipo `tree` y árboles en el horizonte (uno solitario destacado)
+- [ ] Pasto alto instanciado con viento, fuera del camino y estructuras
+- [ ] Ampliar `meadow.js` con los nuevos elementos
+
+## Fase 12 — Pájaros
+- [ ] Pájaros instanciados con aleteo y planeo
+- [ ] Bandadas con comportamiento de boids y deambular
+- [ ] Pájaros que se posan en dinteles y despegan
+- [ ] Densidad según la hora del día
+- [ ] (Opcional) Trinos procedurales de día
+
+## Fase 13 — Pulido y validación v2
+- [ ] Ajustar colores de cada fase del día
+- [ ] Verificar rendimiento (draw calls, instancias)
+- [ ] Consola sin errores ni warnings
+- [ ] Verificar criterios de aceptación de la spec v2
+- [ ] Actualizar `AGENTS.md` y `README.md`

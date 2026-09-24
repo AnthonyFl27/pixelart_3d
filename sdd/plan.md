@@ -68,3 +68,70 @@ Basado en `sdd/specs/spec_v1.md`. Cada fase termina con algo ejecutable y verifi
 | Acné/aliasing en sombras duras | Ajustar `shadow.bias`/`normalBias` y ajustar el frustum de sombra a la escena. |
 | Colisiones con piezas rotadas | Usar OBB en plano XZ o descomponer en AABB; dinteles como cajas elevadas. |
 | Rendimiento del terreno | Subdivisión moderada; el efecto pixel oculta la baja densidad. |
+
+---
+
+# Plan de implementación — Spec v2
+
+Basado en `sdd/specs/spec_v2.md`. Se implementa primero el ciclo día/noche porque la antorcha,
+los pájaros y la vegetación dependen de su estado.
+
+## Fase 8 — Sonido de pasos v2
+**Objetivo:** pasos suaves y realistas por superficie.
+- Extraer los pasos a `src/audio/footsteps.js` con un bus propio (paso bajo ≈3 kHz + compresor suave).
+- Síntesis por capas (talón + planta) con ruido rosa/marrón filtrado y envolventes suaves:
+  césped (roce amortiguado), tierra (crujido grave), piedra (golpe sordo con cuerpo tonal breve).
+- Superficie `stone` cuando el suelo bajo el jugador es un colisionador; paso de aterrizaje tras un salto.
+- Volumen y ritmo según velocidad; variación aleatoria por paso.
+**Verificación:** caminar por césped, camino y sobre una losa; comparar los tres sonidos. (RF-201…RF-205)
+
+## Fase 9 — Ciclo día/noche
+**Objetivo:** 15 minutos de día completo que transforman el mundo.
+- `src/world/dayCycle.js`: hora normalizada (0–1), fase, direcciones de sol y luna en un eje inclinado,
+  keyframes de color por elevación del sol (noche, madrugada, amanecer, día, atardecer) en `config.js`.
+- Cielo: degradado y horizonte cálido del lado del sol, sol y luna pixelados, estrellas procedurales
+  que titilan y rotan, nubes teñidas por la luz del momento.
+- Luces: sol/luna comparten la luz con sombras (se elige el astro visible), ambiente y relleno según hora; niebla acorde.
+- HUD: hora y fase. Tecla `T` para acelerar el tiempo.
+**Verificación:** con `T` recorrer un ciclo completo y capturar amanecer, mediodía, atardecer y noche. (RF-210…RF-219)
+
+## Fase 10 — Inventario y antorcha
+**Objetivo:** equipar una antorcha que ilumina la noche.
+- `src/items/inventory.js`: 5 ranuras, selección por teclas/rueda, `Q` para guardar.
+- `src/ui/hotbar.js`: barra pixel art con iconos generados en canvas y ranura activa resaltada.
+- `src/items/torch.js`: modelo en primera persona (render en capa propia sobre la escena), llama por
+  fotogramas pixelados, chispas, balanceo al caminar, animación de sacar/guardar.
+- `PointLight` cálida con parpadeo, siempre presente (intensidad 0 al guardar), sin sombras.
+**Verificación:** equipar de noche y comprobar la iluminación en piedras y suelo. (RF-220…RF-225)
+
+## Fase 11 — Entorno
+**Objetivo:** escenario más rico.
+- Nuevos tipos de datos de nivel: `pebbles`/`rubble` (piedras pequeñas), `tree` (tronco + copa de lóbulos).
+- Musgo en las piedras (máscara por normal/altura en el shader de piedra).
+- `src/world/vegetation.js`: matas de pasto alto con `InstancedMesh` y viento en el vertex shader,
+  excluidas del camino y de las estructuras.
+- Ampliar `meadow.js`: escombros en bases, rocas dispersas, árboles en el horizonte y uno solitario.
+**Verificación:** recorrido visual; draw calls y FPS en el HUD. (RF-240…RF-244)
+
+## Fase 12 — Pájaros
+**Objetivo:** fauna con vida propia.
+- `src/fauna/birds.js`: pájaros con `InstancedMesh` (cuerpo + alas, aleteo en shader o por instancia),
+  bandadas con reglas de boids suaves y objetivos errantes, límites del mundo y altura mínima.
+- Pájaros solitarios que se posan en dinteles y despegan.
+- Densidad según la hora (salen al amanecer, se van al anochecer). Trinos opcionales.
+**Verificación:** observar bandadas durante un día acelerado. (RF-230…RF-234)
+
+## Fase 13 — Pulido y validación v2
+- Ajuste de colores de cada fase contra referencias de amanecer/atardecer pixel art.
+- Rendimiento: instancias, draw calls, sin sombras extra.
+- Criterios de aceptación de la spec v2, `AGENTS.md` y `README.md` actualizados.
+
+## Riesgos v2
+
+| Riesgo | Mitigación |
+|--------|-----------|
+| Recompilación de shaders al encender/apagar la antorcha | PointLight permanente con intensidad variable. |
+| Noche demasiado oscura o plana | Luz de luna mínima configurable + ambiente azulado; ajustar con capturas. |
+| Coste del pasto alto | Instancias solo en un radio alrededor del jugador, geometría de pocas caras. |
+| Sombras que "saltan" al cambiar de sol a luna | Transición con intensidad a 0 en el horizonte antes de cambiar de astro. |
+| Pasos repetitivos | Variación aleatoria por capa y superficie. |
