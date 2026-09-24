@@ -8,7 +8,6 @@ export function createRenderer(canvas) {
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.BasicShadowMap;
-  renderer.setSize(window.innerWidth, window.innerHeight, false);
   return renderer;
 }
 
@@ -20,15 +19,10 @@ export function createCamera() {
   return camera;
 }
 
-export function onResize(renderer, camera, callback) {
-  const handle = () => {
-    const width = window.innerWidth;
-    const height = window.innerHeight;
-    camera.aspect = width / height;
-    camera.updateProjectionMatrix();
-    renderer.setSize(width, height, false);
-    callback?.(width, height);
-  };
+// Llama callback(width, height) ahora y en cada cambio de tamaño de la ventana.
+export function onResize(callback) {
+  const handle = () => callback(window.innerWidth, window.innerHeight);
   window.addEventListener('resize', handle);
+  handle();
   return () => window.removeEventListener('resize', handle);
 }

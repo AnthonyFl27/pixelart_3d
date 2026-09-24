@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { CONFIG } from './config.js';
 import { createRenderer, createCamera, onResize } from './core/renderer.js';
 import { GameLoop } from './core/loop.js';
+import { PixelPipeline } from './render/pixelPipeline.js';
 
 const canvas = document.getElementById('game');
 const renderer = createRenderer(canvas);
@@ -23,9 +24,17 @@ if (CONFIG.debug.testCube) {
   );
   testCube.position.set(0, 1.5, 0);
   scene.add(testCube);
+
+  const testGround = new THREE.Mesh(
+    new THREE.PlaneGeometry(60, 60),
+    new THREE.MeshLambertMaterial({ color: 0x7fa83a }),
+  );
+  testGround.rotation.x = -Math.PI / 2;
+  scene.add(testGround);
 }
 
-onResize(renderer, camera);
+const pipeline = new PixelPipeline(renderer, scene, camera);
+onResize((width, height) => pipeline.resize(width, height));
 
 const loop = new GameLoop(renderer, {
   update(dt) {
@@ -35,7 +44,7 @@ const loop = new GameLoop(renderer, {
     }
   },
   render() {
-    renderer.render(scene, camera);
+    pipeline.render();
   },
 });
 

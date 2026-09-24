@@ -17,12 +17,12 @@ Leyenda: `[ ]` pendiente · `[x]` completada · `[~]` en progreso
 - [x] Actualizar `README.md` con instrucciones de ejecución
 
 ## Fase 1 — Pipeline pixel art
-- [ ] Render target de baja resolución con `NearestFilter` y depth texture
-- [ ] Quad de pantalla completa con shader de post-proceso
-- [ ] Manejo de `resize` manteniendo el tamaño de píxel
-- [ ] Cuantización a paleta (flag en config)
-- [ ] Dithering Bayer 4×4 (flag en config)
-- [ ] Outline por profundidad (flag en config)
+- [x] Render target de baja resolución con `NearestFilter` y depth texture
+- [x] Quad de pantalla completa con shader de post-proceso
+- [x] Manejo de `resize` manteniendo el tamaño de píxel
+- [x] Cuantización a paleta (flag en config)
+- [x] Dithering Bayer 4×4 (flag en config)
+- [x] Outline por profundidad (flag en config)
 
 ## Fase 2 — Materiales y texturas procedurales
 - [ ] PRNG con semilla y ruido de valor 2D

@@ -40,9 +40,30 @@ export const CONFIG = {
   },
 
   postfx: {
-    paletteQuantize: false,
-    dithering: false,
+    // Contorno oscuro en los bordes de los objetos (por diferencia de profundidad).
     outline: false,
+    outlineThreshold: 0.15, // diferencia relativa de profundidad para dibujar borde
+    outlineStrength: 0.45,  // 0 = sin oscurecer, 1 = negro
+
+    // Reduce cada píxel al color más cercano de `palette` (máx. 32 colores, sRGB).
+    paletteQuantize: false,
+    palette: [
+      // Cielo y nubes
+      0x3f7fc4, 0x5b9bd8, 0x7fb4e0, 0xa9cdef, 0xd6e8f7, 0xf4f8fb,
+      // Césped
+      0x2e4a14, 0x44681c, 0x5f8a24, 0x7fa83a, 0xa3c54f, 0xc8dc6e,
+      // Piedra
+      0x3c3a38, 0x5e5b57, 0x817d77, 0x9a948a, 0xb7b1a6, 0xd2cdc3,
+      // Tierra
+      0x6e5a36, 0x9c8452, 0xbfa86f, 0xd8c78f,
+      // Sombras y luz
+      0x1b1f24, 0xfff2d6,
+    ],
+
+    // Dithering ordenado Bayer 4x4. Sin paleta, cuantiza cada canal a `colorLevels` niveles.
+    dithering: false,
+    ditherStrength: 0.06,
+    colorLevels: 16,
   },
 
   world: {
