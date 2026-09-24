@@ -60,11 +60,12 @@ Leyenda: `[ ]` pendiente · `[x]` completada · `[~]` en progreso
 - [x] HUD de depuración (FPS, posición, modo) con `F3`
 
 ## Fase 7 — Pulido y validación
-- [ ] Ajustar paleta, resolución pixel, sombras y niebla contra la referencia
-- [ ] Optimizar (reutilizar geometrías/materiales, draw calls) y verificar 60 FPS
-- [ ] Consola sin errores ni warnings
-- [ ] Verificar criterios de aceptación de la spec
-- [ ] Actualizar `AGENTS.md` y `README.md`
+- [x] Ajustar paleta, resolución pixel, sombras y niebla contra la referencia
+- [x] Optimizar (reutilizar geometrías/materiales, draw calls): piedras fusionadas en una malla, 5 draw calls por frame
+- [ ] Verificar 60 FPS en hardware real (no medible en el entorno de pruebas sin GPU)
+- [x] Consola sin errores ni warnings
+- [x] Verificar criterios de aceptación de la spec
+- [x] Actualizar `AGENTS.md` y `README.md`
 
 ## Opcional
 - [x] Audio ambiente (viento, pasos)

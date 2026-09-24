@@ -53,7 +53,7 @@ const fragmentShader = /* glsl */ `
     // Sol: disco + halo en bandas.
     float sunDot = dot(dir, normalize(uSunDirection));
     float glow = smoothstep(cos(uSunGlowSize), 1.0, sunDot);
-    color += uSunColor * floor(glow * 4.0) / 4.0 * 0.35;
+    color += uSunColor * floor(glow * 4.0) / 4.0 * 0.25;
     if (sunDot > cos(uSunSize)) color = uSunColor;
 
     gl_FragColor = vec4(color, 1.0);

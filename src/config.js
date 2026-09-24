@@ -5,13 +5,13 @@ export const CONFIG = {
 
   render: {
     // Altura en píxeles del render interno; el ancho se deriva del aspect ratio.
-    pixelHeight: 270,
+    pixelHeight: 220,
     maxPixelRatio: 1,
     clearColor: 0xa9cdef,
     // Ajusta la posición de la cámara a una rejilla de mundo para reducir el
     // "shimmering" de texels al moverse (1 / texelsPerUnit = un texel).
     cameraSnap: true,
-    cameraSnapUnit: 1 / 32,
+    cameraSnapUnit: 1 / 24,
   },
 
   camera: {
@@ -32,11 +32,11 @@ export const CONFIG = {
     sunDirection: { x: 0.6, y: 0.45, z: -0.5 },
     skyColor: 0xdfeeff,
     groundColor: 0x9a9a80,
-    hemiIntensity: 0.9,
+    hemiIntensity: 0.8,
     // Luz de relleno casi horizontal desde la cámara: ilumina las caras
     // verticales (piedras a contraluz) sin aclarar las sombras del suelo.
     fillColor: 0xe8eeff,
-    fillIntensity: 1.3,
+    fillIntensity: 1.9,
     fillElevation: 0.15,
     fillSideOffset: 0.4,   // desplaza la luz hacia la derecha de la cámara
     toonSteps: 4,
@@ -67,7 +67,7 @@ export const CONFIG = {
     cloudWind: { x: 0.004, z: 0.0015 },
     sunColor: 0xfff6e0,
     sunSize: 0.035,         // radio angular del disco solar (rad)
-    sunGlowSize: 0.35,      // radio angular del halo (rad)
+    sunGlowSize: 0.22,      // radio angular del halo (rad)
   },
 
   postfx: {
@@ -99,7 +99,7 @@ export const CONFIG = {
 
   textures: {
     size: 64,          // lado de cada textura en texels
-    texelsPerUnit: 16, // densidad de texels por unidad de mundo
+    texelsPerUnit: 12, // densidad de texels por unidad de mundo
     // colors: de oscuro a claro. blotchWeight: peso de las manchas (fbm) frente al grano.
     stone: {
       colors: [0x6b6762, 0x837e77, 0x96918a, 0xa8a39a, 0xb8b3aa, 0xc8c3b9],

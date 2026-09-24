@@ -99,10 +99,10 @@ index.html ─► src/main.js
 
 ## 8. Criterios de aceptación
 
-- [ ] Se abre `index.html` en servidor local y el juego arranca sin errores.
-- [ ] La imagen es claramente pixelada y reconocible frente a la referencia (piedras, césped, camino, cielo, sombras).
-- [ ] El jugador puede recorrer la escena, saltar, correr y volar.
-- [ ] No se atraviesan las piedras caminando.
-- [ ] Cambiar la resolución pixel, colores o velocidades en `config.js` se refleja al recargar.
-- [ ] Añadir un trilito nuevo solo requiere añadir una entrada en `src/levels/meadow.js`.
-- [ ] ≥ 60 FPS en hardware medio.
+- [x] Se abre `index.html` en servidor local y el juego arranca sin errores.
+- [x] La imagen es claramente pixelada y reconocible frente a la referencia (piedras, césped, camino, cielo, sombras).
+- [x] El jugador puede recorrer la escena, saltar, correr y volar.
+- [x] No se atraviesan las piedras caminando.
+- [x] Cambiar la resolución pixel, colores o velocidades en `config.js` se refleja al recargar.
+- [x] Añadir un trilito nuevo solo requiere añadir una entrada en `src/levels/meadow.js`.
+- [ ] ≥ 60 FPS en hardware medio. *(Pendiente de medir en hardware real: el entorno de pruebas usa render por software sin GPU. La escena usa 5 draw calls.)*

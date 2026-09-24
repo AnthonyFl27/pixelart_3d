@@ -37,23 +37,47 @@ Abrir `http://localhost:8080`. También funciona tal cual en GitHub Pages.
 
 ```
 pixelart_3d/
-├── index.html              # Punto de entrada: importmap, canvas, HUD
+├── index.html                  # Punto de entrada: importmap, canvas, contenedor de UI
 ├── src/
-│   ├── main.js             # Arranque: crea motor, mundo, jugador y bucle
-│   ├── config.js           # TODOS los parámetros ajustables (resolución, velocidad, colores...)
-│   ├── core/               # Renderer, bucle de juego, input
-│   ├── render/             # Pipeline pixel art (render target, post-proceso, shaders)
-│   ├── world/              # Terreno, cielo, estructuras, materiales/texturas procedurales
-│   ├── player/             # Controlador de primera persona y colisiones
-│   ├── levels/             # Definición de niveles como datos (JSON/objetos JS)
-│   └── ui/                 # HUD, menú de pausa, overlay de inicio
-├── assets/                 # Texturas/modelos externos opcionales
-├── sdd/                    # Spec-Driven Development
-│   ├── specs/spec_v1.md    # Especificación del prototipo
-│   ├── plan.md             # Plan de implementación
-│   └── task.md             # Lista de tareas con checkboxes
+│   ├── main.js                 # Arranque: motor, mundo, jugador, UI, estados y bucle
+│   ├── config.js               # TODOS los parámetros ajustables
+│   ├── core/
+│   │   ├── renderer.js         # WebGLRenderer, cámara y resize
+│   │   ├── loop.js             # Bucle con THREE.Timer y delta limitado
+│   │   ├── input.js            # Teclado, ratón, Pointer Lock
+│   │   └── noise.js            # PRNG con semilla y ruido de valor 2D
+│   ├── render/
+│   │   ├── pixelPipeline.js    # Render a baja resolución + escalado entero
+│   │   └── shaders/postfx.js   # Outline, paleta y dithering
+│   ├── world/
+│   │   ├── textures.js         # Texturas procedurales (piedra, césped, tierra, ruido)
+│   │   ├── materials.js        # Materiales toon por bandas
+│   │   ├── geometryUtils.js    # UVs de densidad constante
+│   │   ├── terrain.js          # Terreno, getHeight(x, z) y camino de tierra (shader)
+│   │   ├── sky.js              # Cúpula de cielo, nubes y sol
+│   │   ├── lighting.js         # Sol con sombras, ambiente y luz de relleno
+│   │   ├── structures.js       # Fábrica de estructuras de piedra
+│   │   └── levelLoader.js      # Instancia un nivel y fusiona las piedras
+│   ├── player/
+│   │   ├── controller.js       # Primera persona: andar, correr, saltar, volar
+│   │   └── collision.js        # Cajas orientadas, suelo y techo
+│   ├── levels/meadow.js        # Nivel como datos (spawn, camino, estructuras)
+│   ├── ui/                     # overlay.js (inicio/pausa), hud.js (F3), ui.css
+│   └── audio/ambient.js        # Viento y pasos procedurales (Web Audio)
+├── sdd/                        # Spec-Driven Development
+│   ├── specs/spec_v1.md        # Especificación del prototipo
+│   ├── plan.md                 # Plan de implementación
+│   └── task.md                 # Lista de tareas con checkboxes
 └── AGENTS.md
 ```
+
+## Puntos de extensión
+
+- **Nueva estructura en el nivel:** añadir una entrada a `structures` en `src/levels/meadow.js`.
+- **Nuevo tipo de estructura:** añadir una función a `STRUCTURE_TYPES` en `src/world/structures.js`
+  que devuelva piezas `{ geometry, position, rotationY }`. Colisiones y sombras son automáticas.
+- **Nuevo nivel:** crear `src/levels/<nombre>.js` con la misma forma que `MEADOW` e importarlo en `main.js`.
+- **Aspecto visual:** paleta, resolución pixel, luz, niebla, nubes y post-proceso en `src/config.js`.
 
 ## Flujo de trabajo (SDD)
 
@@ -75,6 +99,7 @@ pixelart_3d/
 ## Verificación
 
 - Abrir el juego en el servidor local y comprobar que no hay errores en consola.
+- `F3` muestra FPS, posición, resolución interna y draw calls.
 - Revisar visualmente contra la imagen/video de referencia.
 - Comprobar controles: movimiento, cámara, salto, colisión con estructuras, pausa.
 
