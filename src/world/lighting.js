@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { CONFIG } from '../config.js';
 
-// Sol direccional con sombras duras + luz hemisférica de ambiente.
+// Sol direccional con sombras duras + luz hemisférica de ambiente + relleno.
 // El área de sombras sigue al jugador y se ajusta a la rejilla de texels del
 // shadow map para que las sombras no "tiemblen" al moverse.
 export class Lighting {
@@ -29,6 +29,11 @@ export class Lighting {
     scene.add(this.sun);
     scene.add(this.sun.target);
 
+    this.fill = new THREE.DirectionalLight(l.fillColor, l.fillIntensity);
+    scene.add(this.fill);
+    scene.add(this.fill.target);
+    this.viewDirection = new THREE.Vector3();
+
     // Base del espacio de luz para ajustar el centro a la rejilla de texels.
     this.forward = this.direction.clone().negate();
     this.right = new THREE.Vector3().crossVectors(this.forward, new THREE.Vector3(0, 1, 0)).normalize();
@@ -37,7 +42,7 @@ export class Lighting {
     this.center = new THREE.Vector3();
   }
 
-  update(focus) {
+  update(focus, camera) {
     const t = this.texelSize;
     const r = Math.round(focus.dot(this.right) / t) * t;
     const u = Math.round(focus.dot(this.up) / t) * t;
@@ -50,5 +55,19 @@ export class Lighting {
     this.sun.target.position.copy(this.center);
     this.sun.position.copy(this.center).addScaledVector(this.direction, CONFIG.lighting.shadow.distance);
     this.sun.target.updateMatrixWorld();
+
+    // Relleno: desde detrás de la cámara, ligeramente a la derecha y elevado.
+    const { fillElevation, fillSideOffset } = CONFIG.lighting;
+    camera.getWorldDirection(this.viewDirection);
+    const dx = -this.viewDirection.x;
+    const dz = -this.viewDirection.z;
+    const length = Math.hypot(dx, dz) || 1;
+    this.fill.target.position.copy(focus);
+    this.fill.position.set(
+      focus.x + (dx + dz * fillSideOffset) / length,
+      focus.y + fillElevation,
+      focus.z + (dz - dx * fillSideOffset) / length,
+    );
+    this.fill.target.updateMatrixWorld();
   }
 }

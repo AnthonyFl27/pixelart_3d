@@ -27,12 +27,18 @@ export const CONFIG = {
 
   lighting: {
     sunColor: 0xfff2d6,
-    sunIntensity: 1.6,
+    sunIntensity: 2.2,
     // Dirección hacia el sol (desde el suelo). Debe coincidir con el sol del cielo.
-    sunDirection: { x: 0.35, y: 0.72, z: -0.6 },
+    sunDirection: { x: 0.6, y: 0.45, z: -0.5 },
     skyColor: 0xdfeeff,
-    groundColor: 0x8a9a5a,
-    hemiIntensity: 2.0,
+    groundColor: 0x9a9a80,
+    hemiIntensity: 0.9,
+    // Luz de relleno casi horizontal desde la cámara: ilumina las caras
+    // verticales (piedras a contraluz) sin aclarar las sombras del suelo.
+    fillColor: 0xe8eeff,
+    fillIntensity: 1.3,
+    fillElevation: 0.15,
+    fillSideOffset: 0.4,   // desplaza la luz hacia la derecha de la cámara
     toonSteps: 4,
     shadow: {
       mapSize: 2048,
@@ -55,9 +61,9 @@ export const CONFIG = {
     cloudColor: 0xf4f8fb,
     cloudShadeColor: 0xb9cde2,
     cloudScale: 0.12,
-    cloudStretch: 0.35,     // < 1 estira las nubes en horizontal (vetas)
-    cloudCoverage: 0.48,    // umbral del ruido: más alto = menos nubes
-    cloudSteps: 4,          // niveles de opacidad de las nubes (look pixel)
+    cloudStretch: 0.2,     // < 1 estira las nubes en horizontal (vetas)
+    cloudCoverage: 0.44,    // umbral del ruido: más alto = menos nubes
+    cloudSteps: 5,          // niveles de opacidad de las nubes (look pixel)
     cloudWind: { x: 0.004, z: 0.0015 },
     sunColor: 0xfff6e0,
     sunSize: 0.035,         // radio angular del disco solar (rad)

@@ -40,11 +40,11 @@ Leyenda: `[ ]` pendiente · `[x]` completada · `[~]` en progreso
 - [x] Ajustar frustum y bias de sombras
 
 ## Fase 4 — Estructuras y niveles
-- [ ] Piezas `pillar`, `lintel`, `fallenStone`, `boulder` con deformación de vértices
-- [ ] Pieza compuesta `trilithon`
-- [ ] Cajas de colisión por pieza
-- [ ] Nivel `src/levels/meadow.js` con ≥3 trilitos y piedras caídas
-- [ ] Cargador de nivel que instancia estructuras y registra colisionadores
+- [x] Piezas `pillar`, `lintel`, `fallenStone`, `boulder` con deformación de vértices
+- [x] Pieza compuesta `trilithon`
+- [x] Cajas de colisión por pieza
+- [x] Nivel `src/levels/meadow.js` con ≥3 trilitos y piedras caídas
+- [x] Cargador de nivel que instancia estructuras y registra colisionadores
 
 ## Fase 5 — Jugador y controles
 - [ ] `input.js` con teclado, ratón y Pointer Lock
