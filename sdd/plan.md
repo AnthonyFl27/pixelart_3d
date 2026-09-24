@@ -6,7 +6,7 @@ Basado en `sdd/specs/spec_v1.md`. Cada fase termina con algo ejecutable y verifi
 **Objetivo:** esqueleto que arranca y muestra un canvas.
 - `index.html` con `importmap` (Three.js versión fijada desde CDN), canvas y contenedor de UI.
 - `src/config.js` con todos los parámetros iniciales.
-- `src/core/renderer.js`, `src/core/loop.js` (delta time con `THREE.Clock`, límite de dt).
+- `src/core/renderer.js`, `src/core/loop.js` (delta time con `THREE.Timer`, límite de dt).
 - `src/main.js` que monta escena, cámara y un cubo de prueba.
 - Actualizar `README.md` con instrucciones de ejecución.
 **Verificación:** servidor local muestra un cubo girando sin errores. (RF-01)

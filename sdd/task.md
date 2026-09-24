@@ -9,12 +9,12 @@ Leyenda: `[ ]` pendiente · `[x]` completada · `[~]` en progreso
 - [x] Crear `sdd/task.md`
 
 ## Fase 0 — Base del proyecto
-- [ ] Crear `index.html` con `importmap` de Three.js (versión fijada)
-- [ ] Crear `src/config.js` con parámetros iniciales
-- [ ] Crear `src/core/renderer.js`
-- [ ] Crear `src/core/loop.js` (delta time limitado)
-- [ ] Crear `src/main.js` con escena, cámara y cubo de prueba
-- [ ] Actualizar `README.md` con instrucciones de ejecución
+- [x] Crear `index.html` con `importmap` de Three.js (versión fijada)
+- [x] Crear `src/config.js` con parámetros iniciales
+- [x] Crear `src/core/renderer.js`
+- [x] Crear `src/core/loop.js` (delta time limitado)
+- [x] Crear `src/main.js` con escena, cámara y cubo de prueba
+- [x] Actualizar `README.md` con instrucciones de ejecución
 
 ## Fase 1 — Pipeline pixel art
 - [ ] Render target de baja resolución con `NearestFilter` y depth texture
