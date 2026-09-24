@@ -25,11 +25,11 @@ Leyenda: `[ ]` pendiente · `[x]` completada · `[~]` en progreso
 - [x] Outline por profundidad (flag en config)
 
 ## Fase 2 — Materiales y texturas procedurales
-- [ ] PRNG con semilla y ruido de valor 2D
-- [ ] Textura de piedra moteada
-- [ ] Textura de césped (3–4 tonos)
-- [ ] Textura de tierra ocre
-- [ ] Material toon con gradiente de 3–4 bandas
+- [x] PRNG con semilla y ruido de valor 2D
+- [x] Textura de piedra moteada
+- [x] Textura de césped (3–4 tonos)
+- [x] Textura de tierra ocre
+- [x] Material toon con gradiente de 3–4 bandas
 
 ## Fase 3 — Mundo
 - [ ] Terreno ondulado con ruido y `getHeight(x, z)`

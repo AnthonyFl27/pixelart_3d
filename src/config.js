@@ -66,6 +66,36 @@ export const CONFIG = {
     colorLevels: 16,
   },
 
+  textures: {
+    size: 64,          // lado de cada textura en texels
+    texelsPerUnit: 16, // densidad de texels por unidad de mundo
+    // colors: de oscuro a claro. blotchWeight: peso de las manchas (fbm) frente al grano.
+    stone: {
+      colors: [0x6b6762, 0x837e77, 0x96918a, 0xa8a39a, 0xb8b3aa, 0xc8c3b9],
+      frequency: 4,
+      octaves: 4,
+      blotchWeight: 0.75,
+      speckleLight: 0.02,
+      speckleDark: 0.03,
+    },
+    grass: {
+      colors: [0x44681c, 0x5f8a24, 0x7fa83a, 0x9cc04a],
+      frequency: 4,
+      octaves: 3,
+      blotchWeight: 0.55,
+      speckleLight: 0.05,
+      speckleDark: 0.03,
+    },
+    dirt: {
+      colors: [0x9c8452, 0xae9762, 0xbfa86f, 0xcdb87e],
+      frequency: 3,
+      octaves: 3,
+      blotchWeight: 0.6,
+      speckleLight: 0.02,
+      speckleDark: 0.04,
+    },
+  },
+
   world: {
     size: 300,
     segments: 128,
