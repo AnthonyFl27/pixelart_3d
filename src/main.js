@@ -19,6 +19,7 @@ import { Hotbar } from './ui/hotbar.js';
 import { Inventory } from './items/inventory.js';
 import { Torch } from './items/torch.js';
 import { AmbientAudio } from './audio/ambient.js';
+import { Birds } from './fauna/birds.js';
 import { MEADOW } from './levels/meadow.js';
 
 const level = MEADOW;
@@ -66,6 +67,11 @@ const spawn = Number.isFinite(spawnX) && Number.isFinite(spawnZ)
 const player = new PlayerController(camera, terrain, colliders, spawn, {
   onStep: (surface) => audio.step(surface),
 });
+
+const birds = new Birds(level, terrain, colliders, {
+  onChirp: (pan, volume) => audio.chirp(pan, volume),
+});
+scene.add(birds.mesh);
 
 const inventory = new Inventory();
 const torch = new Torch();
@@ -138,6 +144,7 @@ const loop = new GameLoop(renderer, {
     lighting.update(player.position, camera, day);
     scene.fog.color.copy(day.horizon);
     torch.update(dt, { active: inventory.activeItem?.id === 'torch', player, camera, day });
+    birds.update(state === 'playing' ? dt : 0, { day, player, camera });
     hud.update(dt, {
       position: player.position,
       mode: player.mode,
@@ -145,6 +152,7 @@ const loop = new GameLoop(renderer, {
       drawCalls: renderer.info.render.calls,
       muted: audio.muted,
       clock: `${dayCycle.clock} ${day.phase}`,
+      birds: `${birds.visibleCount} (${birds.perchedCount} posados)`,
     });
     input.endFrame();
   },

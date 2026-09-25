@@ -113,11 +113,11 @@ Leyenda: `[ ]` pendiente · `[x]` completada · `[~]` en progreso
 - [x] Ampliar `meadow.js` con los nuevos elementos
 
 ## Fase 12 — Pájaros
-- [ ] Pájaros instanciados con aleteo y planeo
-- [ ] Bandadas con comportamiento de boids y deambular
-- [ ] Pájaros que se posan en dinteles y despegan
-- [ ] Densidad según la hora del día
-- [ ] (Opcional) Trinos procedurales de día
+- [x] Pájaros instanciados con aleteo y planeo
+- [x] Bandadas con comportamiento de boids y deambular
+- [x] Pájaros que se posan en dinteles y despegan
+- [x] Densidad según la hora del día
+- [x] (Opcional) Trinos procedurales de día
 
 ## Fase 13 — Pulido y validación v2
 - [ ] Ajustar colores de cada fase del día

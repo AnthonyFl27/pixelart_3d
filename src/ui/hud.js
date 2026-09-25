@@ -36,7 +36,7 @@ export class Hud {
     }
     if (this.element.hidden) return;
 
-    const { position: p, mode, internal, drawCalls, muted, clock } = info;
+    const { position: p, mode, internal, drawCalls, muted, clock, birds } = info;
     this.element.textContent = [
       `FPS   ${this.fps}`,
       `HORA  ${clock}`,
@@ -44,6 +44,7 @@ export class Hud {
       `MODO  ${mode}`,
       `RES   ${internal.width}x${internal.height} x${internal.scale}`,
       `DRAW  ${drawCalls}`,
+      `AVES  ${birds}`,
       `AUDIO ${muted ? 'off' : 'on'}`,
     ].join('\n');
   }

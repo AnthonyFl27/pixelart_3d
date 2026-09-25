@@ -73,6 +73,39 @@ export class AmbientAudio {
     filterLfo.start();
   }
 
+  // Trino corto: 2-4 notas senoidales con barrido, filtradas y en estéreo.
+  // pan: -1 izquierda … 1 derecha. volume: 0-1 (según distancia).
+  chirp(pan, volume) {
+    const ctx = this.context;
+    if (!ctx || this.muted || ctx.state !== 'running') return;
+    const now = ctx.currentTime + 0.01;
+    const panner = ctx.createStereoPanner();
+    panner.pan.value = pan * 0.8;
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = CONFIG.audio.chirpLowpass;
+    const output = ctx.createGain();
+    output.gain.value = CONFIG.audio.chirpVolume * volume;
+    filter.connect(panner).connect(output).connect(this.master);
+
+    const notes = 2 + Math.floor(Math.random() * 3);
+    const base = 2200 + Math.random() * 900;
+    for (let i = 0; i < notes; i++) {
+      const start = now + i * (0.09 + Math.random() * 0.05);
+      const osc = ctx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(base * (0.9 + Math.random() * 0.2), start);
+      osc.frequency.exponentialRampToValueAtTime(base * (1.15 + Math.random() * 0.25), start + 0.06);
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0, start);
+      gain.gain.linearRampToValueAtTime(1, start + 0.012);
+      gain.gain.setTargetAtTime(0, start + 0.03, 0.02);
+      osc.connect(gain).connect(filter);
+      osc.start(start);
+      osc.stop(start + 0.12);
+    }
+  }
+
   // Paso sobre `surface` ('grass' | 'dirt' | 'stone').
   step(surface, intensity = 1) {
     if (!this.footsteps || this.muted || this.context.state !== 'running') return;

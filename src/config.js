@@ -304,6 +304,8 @@ export const CONFIG = {
     enabled: true,
     masterVolume: 0.6,
     windVolume: 0.3,
+    chirpVolume: 0.05,     // trinos: volumen bajo y filtrados para no ser chillones
+    chirpLowpass: 4200,
   },
 
   // Pasos: dos capas de ruido filtrado (talón + planta) por superficie.
@@ -334,6 +336,36 @@ export const CONFIG = {
         tone: { frequency: 125, drop: 0.6, decay: 0.08, gain: 0.45 },
       },
     },
+  },
+
+  birds: {
+    flocks: 3,
+    flockSize: 7,
+    solo: 6,               // pájaros sueltos que pueden posarse
+    areaRadius: 70,        // zona de vuelo alrededor del centro del nivel
+    minAltitude: 8,
+    maxAltitude: 28,
+    minSpeed: 4,
+    maxSpeed: 9,
+    maxAccel: 9,
+    seek: 1.1,
+    cohesion: 0.5,
+    alignment: 0.8,
+    separation: 3,
+    separationDistance: 1.8,
+    retargetTime: [8, 20], // segundos hasta cambiar de rumbo
+    perchChance: 0.6,
+    perchHeight: 2.5,      // altura mínima de una piedra para posarse
+    perchTime: [8, 22],
+    scareDistance: 6,      // el jugador los espanta a esta distancia
+    roostDistance: 170,    // adonde se van al anochecer
+    hideDistance: 150,
+    color: 0x3e3630,
+    scale: 1.8,
+    flapSpeed: 16,
+    flapAmplitude: 0.32,
+    chirpInterval: [2.5, 8],
+    chirpDistance: 35,
   },
 
   inventory: {
