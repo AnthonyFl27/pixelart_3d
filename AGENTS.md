@@ -27,11 +27,13 @@ https://youtu.be/GhlTMsPoaJw
 Los navegadores bloquean ES modules desde `file://`, por lo que se sirve la carpeta con cualquier servidor estático:
 
 ```bash
-# Opción A (Python)
-python3 -m http.server 8080
+# Opción A (Python, sin caché: evita mezclar módulos viejos tras actualizar)
+python3 serve.py 8080
 # Opción B (Node)
 npx serve .
 ```
+
+Los errores de carga (módulo, CDN, `file://`, shader) se muestran en pantalla en lugar de dejarla en negro.
 
 Abrir `http://localhost:8080`. También funciona tal cual en GitHub Pages.
 
@@ -39,7 +41,8 @@ Abrir `http://localhost:8080`. También funciona tal cual en GitHub Pages.
 
 ```
 pixelart_3d/
-├── index.html                  # Punto de entrada: importmap, canvas, contenedor de UI
+├── index.html                  # Punto de entrada: importmap, canvas, contenedor de UI y errores de arranque
+├── serve.py                    # Servidor estático de desarrollo sin caché
 ├── src/
 │   ├── main.js                 # Arranque: motor, mundo, jugador, UI, estados y bucle
 │   ├── config.js               # TODOS los parámetros ajustables

@@ -197,3 +197,4 @@ const loop = new GameLoop(renderer, {
 
 overlay.showStart();
 loop.start();
+document.getElementById('boot')?.remove();

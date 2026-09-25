@@ -8,6 +8,13 @@ export function createRenderer(canvas) {
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.BasicShadowMap;
+  // Un shader que no compila en esta GPU se muestra en pantalla (ver index.html).
+  renderer.debug.onShaderError = (gl, program, vertexShader, fragmentShader) => {
+    const log = [gl.getProgramInfoLog(program), gl.getShaderInfoLog(vertexShader), gl.getShaderInfoLog(fragmentShader)]
+      .filter(Boolean).join('\n').replace(/\0/g, '').trim();
+    console.error(`Shader error:\n${log}`);
+    window.__bootError?.(`shader: ${log.slice(0, 400)}`);
+  };
   return renderer;
 }
 

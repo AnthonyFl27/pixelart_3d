@@ -17,10 +17,14 @@ con camino de tierra, cielo con nubes animadas, sombras duras y exploración lib
 Los navegadores bloquean ES modules desde `file://`, así que hay que servir la carpeta con un servidor estático:
 
 ```bash
-python3 -m http.server 8080
+python3 serve.py 8080
 # o bien
 npx serve .
 ```
+
+`serve.py` desactiva la caché del navegador: con `python3 -m http.server` una recarga normal puede mezclar
+módulos viejos y nuevos tras actualizar el código y dejar la pantalla en negro (se arregla con Ctrl+Shift+R).
+Si algo falla al cargar, el error aparece en pantalla.
 
 Abrir `http://localhost:8080` y hacer clic para jugar.
 

@@ -39,6 +39,32 @@
 <body>
   <canvas id="game"></canvas>
   <div id="ui"></div>
+  <div id="boot" class="boot">Cargando…</div>
+  <script>
+    // Diagnóstico de arranque: si falla la carga de un módulo o un shader, se muestra el
+    // error en pantalla en lugar de quedarse en negro. main.js quita el aviso al terminar.
+    (function () {
+      function fail(message) {
+        var boot = document.getElementById('boot');
+        if (!boot) {
+          boot = document.createElement('div');
+          boot.id = 'boot';
+          boot.className = 'boot';
+          document.body.appendChild(boot);
+        }
+        boot.classList.add('boot--error');
+        boot.textContent = 'Error al cargar el juego:\n' + message +
+          '\n\nPrueba a recargar sin caché (Ctrl+Shift+R) y a servir la carpeta con python3 serve.py.';
+      }
+      window.__bootError = fail;
+      if (location.protocol === 'file:') fail('los módulos no cargan desde file://; abre http://localhost:8080 con un servidor local.');
+      window.addEventListener('error', function (event) {
+        if (event instanceof ErrorEvent) fail(event.message + (event.filename ? '\n' + event.filename + ':' + event.lineno : ''));
+        else if (event.target && event.target.tagName === 'SCRIPT') fail('no se pudo descargar un módulo del juego (' + (event.target.src || 'script') + ' o sus dependencias) o Three.js desde el CDN.');
+      }, true);
+      window.addEventListener('unhandledrejection', function (event) { fail(String(event.reason)); });
+    })();
+  </script>
   <script type="module" src="./src/main.js"></script>
 </body>
 </html>
