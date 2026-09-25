@@ -1,3 +1,4 @@
+import * as THREE from 'three';
 import { CONFIG } from '../config.js';
 
 // Proyección de UVs por caras (box mapping) en coordenadas de mundo/objeto,
@@ -24,4 +25,12 @@ export function applyBoxUVs(geometry) {
   }
   uv.needsUpdate = true;
   return geometry;
+}
+
+// Extruye un perfil (plano XY) a lo ancho del eje Z, centrado, con UVs de densidad constante.
+export function extrudeAcross(shape, width) {
+  const geometry = new THREE.ExtrudeGeometry(shape, { depth: width, bevelEnabled: false, curveSegments: 1 });
+  geometry.translate(0, 0, -width / 2);
+  geometry.computeVertexNormals();
+  return applyBoxUVs(geometry);
 }

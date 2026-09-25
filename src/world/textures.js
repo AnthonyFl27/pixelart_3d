@@ -19,6 +19,11 @@ export function createTextures() {
     leavesAutumn: createPaletteTexture('leavesAutumn', CONFIG.textures.leavesAutumn),
     wood: createPaletteTexture('wood', CONFIG.textures.wood),
     masonry: createMasonryTexture('masonry', CONFIG.textures.masonry),
+    planks: createPlankTexture('planks', CONFIG.textures.planks),
+    shingles: createShingleTexture('shingles', CONFIG.textures.shingles),
+    rustyMetal: createCorrugatedTexture('rustyMetal', CONFIG.textures.rustyMetal),
+    lattice: createLatticeTexture('lattice', CONFIG.textures.lattice),
+    dirtyGlass: createGlassTexture('dirtyGlass', CONFIG.textures.dirtyGlass),
     noise: createNoiseTexture('noise', CONFIG.textures.noise),
   };
 }
@@ -149,6 +154,200 @@ function createMasonryTexture(name, params) {
   }
   ctx.putImageData(image, 0, 0);
   return finishCanvasTexture(canvas, name);
+}
+
+// Lienzo de `textures.size` texels con escritura por texel (x e y se repiten).
+function createPixelCanvas() {
+  const size = CONFIG.textures.size;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  const image = ctx.createImageData(size, size);
+  const wrap = (v) => ((v % size) + size) % size;
+  return {
+    size,
+    canvas,
+    put(x, y, [r, g, b], alpha = 255) {
+      const offset = (wrap(y) * size + wrap(x)) * 4;
+      image.data[offset] = r;
+      image.data[offset + 1] = g;
+      image.data[offset + 2] = b;
+      image.data[offset + 3] = alpha;
+    },
+    finish(name) {
+      ctx.putImageData(image, 0, 0);
+      return finishCanvasTexture(canvas, name);
+    },
+  };
+}
+
+// Juntas repartidas de forma cíclica en una fila de `size` texels (anchos en [min, max]).
+function cyclicJoints(size, [min, max], random) {
+  const joints = [];
+  const start = Math.floor(random() * size);
+  let x = start;
+  do {
+    joints.push(x % size);
+    x += min + Math.floor(random() * (max - min + 1));
+  } while (x - start < size - min);
+  return joints.sort((a, b) => a - b);
+}
+
+// Tablas gastadas: filas de `rowHeight` texels, cada una con tablas de largo variable.
+// La primera fila de texels de cada tabla es la sombra de la tabla de arriba y la
+// última, el canto iluminado. Vetas horizontales, nudos y clavos junto a las juntas.
+// Cada tabla de la cabaña muestra una sola fila (ver cabin.js).
+function createPlankTexture(name, p) {
+  const seed = deriveSeed(CONFIG.seed, name);
+  const random = createRandom(seed);
+  const noise = new ValueNoise2D(seed);
+  const colors = p.colors.map(hexToRgb);
+  const top = colors.length - 1;
+  const px = createPixelCanvas();
+  const { size } = px;
+  for (let y0 = 0; y0 < size; y0 += p.rowHeight) {
+    const joints = cyclicJoints(size, p.boardLength, random);
+    for (let j = 0; j < joints.length; j++) {
+      const from = joints[j];
+      const to = j + 1 < joints.length ? joints[j + 1] : joints[0] + size;
+      const base = 1 + Math.floor(random() * (top - 1));
+      const knot = random() < p.knots ? { x: from + 3 + Math.floor(random() * Math.max(1, to - from - 6)), y: y0 + 1 + Math.floor(random() * (p.rowHeight - 2)) } : null;
+      const weathered = random() < p.weathering;
+      for (let x = from; x < to; x++) {
+        for (let y = y0; y < y0 + p.rowHeight; y++) {
+          if (x === from || y === y0) {
+            px.put(x, y, colors[0]);
+            continue;
+          }
+          const [gx, gy] = p.grainFrequency;
+          const grain = noise.fbm((x / size) * gx, (y / size) * gy, { octaves: 2, period: [gx, gy] }) - 0.5;
+          let shade = base + Math.round(grain * 4 * p.grain + (random() - 0.5) * 0.8);
+          if (y === y0 + p.rowHeight - 1) shade += 1;
+          if (weathered) shade += 1;
+          if (knot && Math.abs(x - knot.x) <= 1 && y === knot.y) shade = x === knot.x ? 0 : shade - 1;
+          px.put(x, y, colors[THREE.MathUtils.clamp(shade, 1, top)]);
+        }
+      }
+      // Clavos junto a las juntas.
+      for (const nx of [from + 1, to - 2]) {
+        if (random() < p.nails) px.put(nx, y0 + 1 + Math.floor(random() * (p.rowHeight - 2)), colors[0]);
+      }
+    }
+  }
+  return px.finish(name);
+}
+
+// Tablillas del tejado: hiladas de `rowHeight` texels con tablillas de ancho variable.
+// Bajo el borde de cada hilada queda una línea de sombra; algunas tablillas faltan
+// (hueco oscuro) o tienen musgo (`accent`).
+function createShingleTexture(name, p) {
+  const seed = deriveSeed(CONFIG.seed, name);
+  const random = createRandom(seed);
+  const colors = p.colors.map(hexToRgb);
+  const accent = hexToRgb(p.accent);
+  const top = colors.length - 1;
+  const px = createPixelCanvas();
+  const { size } = px;
+  for (let y0 = 0; y0 < size; y0 += p.rowHeight) {
+    const joints = cyclicJoints(size, p.shingleWidth, random);
+    for (let j = 0; j < joints.length; j++) {
+      const from = joints[j];
+      const to = j + 1 < joints.length ? joints[j + 1] : joints[0] + size;
+      const roll = random();
+      const missing = roll < p.missing;
+      const mossy = !missing && roll < p.missing + p.accentChance;
+      const base = 1 + Math.floor(random() * (top - 1));
+      for (let x = from; x < to; x++) {
+        for (let y = y0; y < y0 + p.rowHeight; y++) {
+          const shadow = y === y0;
+          const joint = x === from;
+          if (missing) px.put(x, y, colors[0]);
+          else if (shadow || joint) px.put(x, y, colors[shadow && joint ? 0 : 1]);
+          else if (mossy && random() < 0.7) px.put(x, y, accent);
+          else {
+            // El borde inferior (culote) de la tablilla, más claro.
+            const shade = base + (y === y0 + p.rowHeight - 1 ? 1 : 0) + (random() < 0.15 ? -1 : 0);
+            px.put(x, y, colors[THREE.MathUtils.clamp(shade, 1, top)]);
+          }
+        }
+      }
+    }
+  }
+  return px.finish(name);
+}
+
+// Chapa ondulada oxidada: ondas verticales (columnas de `ribPeriod` texels con luz y
+// sombra) y manchas de óxido estiradas hacia abajo (chorretones).
+function createCorrugatedTexture(name, p) {
+  const seed = deriveSeed(CONFIG.seed, name);
+  const random = createRandom(seed);
+  const noise = new ValueNoise2D(seed);
+  const metal = p.metal.map(hexToRgb);
+  const rust = p.rust.map(hexToRgb);
+  const ribShade = [0, 1, 2, 1];
+  const px = createPixelCanvas();
+  const { size } = px;
+  const [fx, fy] = p.frequency;
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const rib = ribShade[Math.floor((x % p.ribPeriod) / p.ribPeriod * ribShade.length)];
+      const stain = noise.fbm((x / size) * fx, (y / size) * fy, { octaves: 3, period: [fx, fy] }) + (random() - 0.5) * 0.12;
+      if (stain > 1 - p.rustAmount) {
+        const depth = THREE.MathUtils.clamp(Math.floor((stain - (1 - p.rustAmount)) / p.rustAmount * rust.length * 1.6), 0, rust.length - 1);
+        px.put(x, y, rust[THREE.MathUtils.clamp(rust.length - 1 - depth + rib - 1, 0, rust.length - 1)]);
+      } else {
+        px.put(x, y, metal[THREE.MathUtils.clamp(rib + (random() < 0.08 ? -1 : 0), 0, metal.length - 1)]);
+      }
+    }
+  }
+  return px.finish(name);
+}
+
+// Celosía: listones diagonales cruzados (periodo `period`, ancho `slat`) sobre un fondo
+// oscuro (el hueco bajo la cabaña). Opaca: no necesita transparencia.
+function createLatticeTexture(name, p) {
+  const random = createRandom(deriveSeed(CONFIG.seed, name));
+  const colors = p.colors.map(hexToRgb);
+  const gap = hexToRgb(p.gap);
+  const px = createPixelCanvas();
+  const { size } = px;
+  const mod = (v) => ((v % p.period) + p.period) % p.period;
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const over = mod(x + y);   // listón que queda por encima
+      const under = mod(x - y);
+      let shade = -1;
+      if (over < p.slat) shade = over === 0 ? 2 : 1;
+      else if (under < p.slat) shade = under === 0 && p.slat > 1 ? 1 : 0;
+      if (shade < 0) px.put(x, y, gap);
+      else px.put(x, y, colors[THREE.MathUtils.clamp(shade - (random() < 0.12 ? 1 : 0), 0, colors.length - 1)]);
+    }
+  }
+  return px.finish(name);
+}
+
+// Cristal sucio: tinte translúcido con manchas de mugre casi opacas, chorretones
+// verticales y reflejos diagonales de 1 texel.
+function createGlassTexture(name, p) {
+  const seed = deriveSeed(CONFIG.seed, name);
+  const random = createRandom(seed);
+  const noise = new ValueNoise2D(seed);
+  const tint = hexToRgb(p.tint);
+  const grime = hexToRgb(p.grime);
+  const highlight = hexToRgb(p.highlight);
+  const px = createPixelCanvas();
+  const { size } = px;
+  const drips = Array.from({ length: size }, () => random() < p.drips);
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const dirt = noise.fbm((x / size) * 4, (y / size) * 4, { octaves: 3, period: 4 }) + (drips[x] ? 0.18 : 0) + (random() - 0.5) * 0.1;
+      if (dirt > 1 - p.grimeAmount) px.put(x, y, grime, Math.round(p.grimeAlpha * 255));
+      else if ((x + y) % p.highlightPeriod === 0 || (x + y) % p.highlightPeriod === 2) px.put(x, y, highlight, Math.round(p.highlightAlpha * 255));
+      else px.put(x, y, tint, Math.round(p.alpha * 255));
+    }
+  }
+  return px.finish(name);
 }
 
 function finishCanvasTexture(canvas, name) {

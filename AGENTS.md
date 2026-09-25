@@ -52,7 +52,7 @@ pixelart_3d/
 │   │   ├── pixelPipeline.js    # Render a baja resolución + escalado entero + capas superpuestas
 │   │   └── shaders/postfx.js   # Outline, paleta y dithering
 │   ├── world/
-│   │   ├── textures.js         # Texturas procedurales (piedra, césped, tierra, corteza, hojas, musgo, ruido)
+│   │   ├── textures.js         # Texturas procedurales (piedra, césped, madera, tablas, tablillas, chapa, celosía, cristal…)
 │   │   ├── materials.js        # Materiales toon por bandas + musgo en la piedra
 │   │   ├── geometryUtils.js    # UVs de densidad constante
 │   │   ├── terrain.js          # Terreno por trozos de resolución variable, getHeight(x, z) y suelo (shader)
@@ -62,7 +62,9 @@ pixelart_3d/
 │   │   ├── dayCycle.js         # Reloj del mundo: hora, fase, sol/luna y colores por keyframes
 │   │   ├── sky.js              # Cúpula de cielo: degradado, nubes, sol, luna y estrellas
 │   │   ├── lighting.js         # Sol/luna con sombras, ambiente y luz de relleno según la hora
-│   │   ├── structures.js       # Fábrica de estructuras: piedras, escombros, árboles, puente, leñera, valla
+│   │   ├── structures.js       # Fábrica de estructuras: piedras, escombros, árboles, puente, leñera, valla, cabaña
+│   │   ├── cabin.js            # Cabaña: paredes de tablas con huecos, tejado con agujero, porche, chimenea, pilotes
+│   │   ├── zones.js            # Zonas con nombre (interior de la cabaña) y consulta de zona
 │   │   ├── vegetation.js       # Pasto alto y flores instanciados con viento
 │   │   └── levelLoader.js      # Instancia un nivel y fusiona las piezas por material
 │   ├── player/
@@ -94,7 +96,11 @@ pixelart_3d/
 - **Nuevo tipo de estructura:** añadir una función a `STRUCTURE_TYPES` en `src/world/structures.js`
   que devuelva piezas `{ geometry, position, rotationY, material, collider, surface, groundAt }`.
   Colisiones, sombras y fusión por material son automáticas. `collider` admite cajas explícitas
-  (con `rise` para rampas) y el tipo recibe `ground(lx, lz)` para consultar el terreno.
+  (con `rise` para rampas), una pieza con `geometry: null` solo aporta colisionadores y el tipo
+  recibe `ground(lx, lz)` para consultar el terreno. Puede devolver `{ pieces, baseY, zones }`
+  con volúmenes con nombre (p. ej. el interior de la cabaña).
+- **Cabaña:** dimensiones, huecos de puerta y ventanas, tejado, porche y chimenea en `CONFIG.cabin`;
+  cualquier clave se puede sobrescribir en la entrada `cabin` del nivel.
 - **Nuevo objeto de inventario:** añadirlo a `ITEMS` en `src/items/inventory.js` (con icono 16x16)
   y su comportamiento en `main.js` según `inventory.activeItem`.
 - **Hora del día:** keyframes de color y luz en `CONFIG.dayCycle.keyframes`; duración en `dayLength`.
@@ -127,6 +133,8 @@ pixelart_3d/
 - Parámetros de URL para probar: `?hora=19.5` (hora inicial) y `?pos=x,z,yaw` (posición inicial).
   Riachuelo: `?pos=-53,20,1.2` (orilla este) y `?pos=-60,40,0.1` (dentro del agua).
   Puente: `?pos=-48,12,1.57` (rampa este) y `?pos=-59,27,0.1` (vista desde el agua).
+  Cabaña: `?pos=-74,10,1.57` (delante del porche) y `?pos=-93,19,-0.92` (trasera y chimenea).
+- `F3` muestra también la zona (`cabin` dentro de la cabaña, `exterior` fuera).
 - Mantener `T` acelera el tiempo.
 - Revisar visualmente contra la imagen/video de referencia.
 - Comprobar controles: movimiento, cámara, salto, colisión con estructuras, pausa, inventario y antorcha.

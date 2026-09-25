@@ -266,6 +266,49 @@ export const CONFIG = {
       blockWidth: [6, 12],   // texels
       grain: 0.8,
     },
+    // Cabaña (src/world/cabin.js). Tablas gastadas: una fila de `rowHeight` texels por tabla.
+    planks: {
+      colors: [0x3b332c, 0x554940, 0x685b4f, 0x7b6d5e, 0x8e806e],
+      rowHeight: 4,
+      boardLength: [14, 34], // texels
+      grain: 0.5,
+      grainFrequency: [8, 32],
+      knots: 0.35,
+      nails: 0.5,
+      weathering: 0.15,      // tablas más claras (lavadas por la lluvia)
+    },
+    shingles: {
+      colors: [0x2b241f, 0x463b33, 0x564a3f, 0x685a4c, 0x7a6b5a],
+      rowHeight: 4,
+      shingleWidth: [3, 6],  // texels
+      missing: 0.03,
+      accent: 0x55602e,      // musgo
+      accentChance: 0.06,
+    },
+    rustyMetal: {
+      metal: [0x4e4f50, 0x646566, 0x7b7b7a],
+      rust: [0x5e2e16, 0x7e401c, 0x9c5424, 0xb86c30],
+      ribPeriod: 4,          // texels por onda
+      rustAmount: 0.45,
+      frequency: [3, 1],     // manchas estiradas en vertical
+    },
+    lattice: {
+      colors: [0x7c786b, 0x969282, 0xaca796],
+      gap: 0x15120f,
+      period: 4,             // texels (debe dividir a `size`)
+      slat: 1,
+    },
+    dirtyGlass: {
+      tint: 0x5f7c88,
+      alpha: 0.4,
+      grime: 0x57513f,
+      grimeAlpha: 0.82,
+      grimeAmount: 0.35,
+      drips: 0.15,           // columnas con chorretones
+      highlight: 0xdfe9ee,
+      highlightAlpha: 0.55,
+      highlightPeriod: 23,
+    },
     moss: {
       colors: [0x3d5a1e, 0x4f6e24, 0x62802c, 0x7a9636],
       frequency: 4,
@@ -412,6 +455,97 @@ export const CONFIG = {
     rampLip: 0.03,         // la rampa sobresale este tanto sobre el terreno en su extremo
   },
 
+  // Cabaña (src/world/cabin.js). Ejes locales: X a lo ancho de la fachada, +Z hacia el
+  // porche, y = 0 en el suelo interior. Cualquier clave se puede sobrescribir en el nivel.
+  // Huecos: `wall` ('front' | 'back' | 'left' | 'right'), `x` a lo largo de la pared vista
+  // desde fuera (hacia la derecha), alturas sobre el suelo (se ajustan a filas de tablas).
+  cabin: {
+    width: 9,
+    depth: 7,
+    wallHeight: 2.8,
+    ridgeHeight: 5,          // altura de la cara inferior de los cabios en la cumbrera
+    floorClearance: 0.6,     // altura mínima del suelo sobre el terreno (pilotes)
+    floorThickness: 0.2,
+    groundSample: 0.5,       // paso para medir el terreno bajo la cabaña (u)
+    // Tablas horizontales de las paredes.
+    boardRows: 9,
+    boardThickness: 0.05,
+    boardTilt: 0.05,         // rad: el canto inferior sobresale (solape)
+    boardLength: [1.6, 3.4],
+    missingBoards: 0.04,
+    looseBoards: 0.05,       // cuelgan de un clavo
+    looseAngle: [0.12, 0.3],
+    crookedBoards: 0.1,
+    crookedAngle: 0.04,
+    cornerBoard: 0.18,
+    trimWidth: 0.1,          // marcos de puerta y ventanas
+    wallColliderDepth: 0.12,
+    door: { wall: 'front', x: -0.4, width: 1, height: 2.1 },
+    windows: [
+      { wall: 'front', x: -2.9, width: 1.1, bottom: 0.95, top: 2.15, cols: 2, rows: 2, shutters: true, brokenPane: 1 },
+      { wall: 'front', x: 2.9, width: 1.1, bottom: 0.95, top: 2.15, cols: 2, rows: 2, shutters: true, crookedShutter: 1 },
+      { wall: 'right', x: -0.5, width: 0.9, bottom: 1.1, top: 2.15, cols: 2, rows: 2 },
+      { wall: 'back', x: -3, width: 0.9, bottom: 1.25, top: 2.15, cols: 2, rows: 1 },
+      { wall: 'back', x: 2, width: 1, bottom: 0.95, top: 2.15, cols: 2, rows: 2, shutters: true, crookedShutter: -1 },
+      { wall: 'left', x: 2.3, width: 0.7, bottom: 1.25, top: 2.15, cols: 1, rows: 2 },
+    ],
+    mullion: 0.04,           // grosor de los travesaños de las ventanas
+    shutterAngle: 0.35,      // rad: contraventana descolgada
+    // Tejado a dos aguas de tablillas con chapas y un agujero con los cabios a la vista.
+    roof: {
+      thickness: 0.08,
+      eaveOverhang: 0.4,
+      gableOverhang: 0.35,
+      rafterHeight: 0.14,
+      rafterWidth: 0.08,
+      rafterSpacing: 0.9,
+      // Agujero en el faldón delantero (x a lo ancho, d a lo largo de la pendiente desde la cumbrera).
+      hole: { x0: -3.3, x1: -1.3, d0: 0.9, d1: 2.6 },
+      brokenShingles: 0.6,   // probabilidad de tablilla rota en el borde del agujero
+      laths: 3,              // listones que cruzan el agujero
+      patches: [             // chapas oxidadas: side 1 delante, -1 detrás
+        { side: 1, x: 1.9, d: 3.2, width: 1.3, length: 1.5, angle: 0.05 },
+        { side: 1, x: -3.4, d: 3.6, width: 1, length: 1.1, angle: -0.08 },
+        { side: -1, x: -1.2, d: 2.2, width: 1.4, length: 1.8, angle: -0.04 },
+        { side: -1, x: 2.6, d: 3.4, width: 1.1, length: 1.3, angle: 0.1 },
+      ],
+      tieBeamEvery: 2,       // una viga horizontal cada N cabios
+    },
+    porch: {
+      depth: 2.2,
+      drop: 0.12,            // el porche queda este tanto por debajo del suelo interior
+      thickness: 0.15,
+      roofDrop: 0.3,         // arranque del tejado del porche bajo el alero principal
+      roofSlope: 0.16,       // pendiente (tangente) del tejado del porche
+      eave: 0.3,
+      sheetWidth: 1.1,       // chapas del tejado del porche
+      postSize: 0.14,
+      beamHeight: 0.14,
+      railHeight: 0.9,
+      balusterSpacing: 0.16,
+      balusterSize: 0.045,
+      missingBalusters: 0.08,
+      brokenBalusters: 0.06,
+      stairsWidth: 1.5,
+      stepRun: 0.3,
+      maxStepRise: 0.2,
+    },
+    chimney: {
+      z: 0,                  // posición a lo largo de la pared izquierda
+      baseWidth: 1.7,
+      baseDepth: 0.9,
+      baseHeight: 2.2,
+      shoulderWidth: 1.3,
+      shoulderHeight: 0.45,
+      stackWidth: 0.95,
+      stackDepth: 0.7,
+      aboveRoof: 0.7,        // sobre la cumbrera
+    },
+    pilingSpacing: 2.2,
+    latticeSegment: 1.2,
+    brokenLattice: 0.1,
+  },
+
   // Musgo/liquen sobre las piedras: aparece en caras hacia arriba, en el lado
   // norte (+Z, a la sombra) y cerca del suelo, con borde irregular por ruido.
   moss: {
@@ -447,6 +581,10 @@ export const CONFIG = {
     flowerCount: 700,
     flowerColors: [0xf4f0e0, 0xf2d24a, 0xb58ad8, 0xe86a5a],
     bareMargin: 0.7,       // distancia mínima al suelo desnudo: caminos, barro, grava (u)
+    // Pasto seco en las zonas `dryGrass` del nivel: fracción seca 1 hasta `dryCore` del radio.
+    dryBaseColor: 0x6e6232,
+    dryTipColor: 0xc9b268,
+    dryCore: 0.55,
     windStrength: 0.12,
     windSpeed: 1.6,
   },

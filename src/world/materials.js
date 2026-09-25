@@ -29,12 +29,31 @@ export function createMaterials(textures) {
     wetStone: toon(textures.wetStone),
     masonry,
     wood: toon(textures.wood),
+    planks: toon(textures.planks),
+    shingles: toon(textures.shingles),
+    rustyMetal: toon(textures.rustyMetal),
+    lattice: toon(textures.lattice),
+    glass: createGlassMaterial(textures.dirtyGlass, gradientMap),
     leavesAutumn: toon(textures.leavesAutumn),
     grass: toon(textures.grass),
     dirt: toon(textures.dirt),
     bark: toon(textures.bark),
     leaves: toon(textures.leaves),
   };
+}
+
+// Cristal sucio translúcido, visible por ambas caras. No proyecta sombras (la luz
+// entra por las ventanas): `userData.castShadow` lo lee el cargador de niveles.
+function createGlassMaterial(map, gradientMap) {
+  const material = new THREE.MeshToonMaterial({
+    map,
+    gradientMap,
+    transparent: true,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+  });
+  material.userData.castShadow = false;
+  return material;
 }
 
 // Mezcla la textura de musgo sobre la piedra según orientación, altura sobre la base de

@@ -1,8 +1,10 @@
 import * as THREE from 'three';
 import { CONFIG } from '../config.js';
 import { createRandom, deriveSeed, ValueNoise2D } from '../core/noise.js';
-import { applyBoxUVs } from './geometryUtils.js';
+import { applyBoxUVs, extrudeAcross } from './geometryUtils.js';
 import { createBoxCollider } from '../player/collision.js';
+import { createCabin } from './cabin.js';
+import { createZone } from './zones.js';
 
 // Fábrica de estructuras. Cada tipo recibe los parámetros de su entrada de nivel, un
 // generador aleatorio y un contexto { ground(lx, lz) -> altura del terreno en un punto local },
@@ -13,7 +15,10 @@ import { createBoxCollider } from '../player/collision.js';
 // `groundAt` apoya la pieza en el terreno medido en ese punto local (piezas sueltas
 // o árboles de un bosquecillo sobre terreno irregular). Un `collider` con cajas explícitas
 // sustituye al bounding box (p. ej. arcos por los que se puede pasar); `rise` inclina la
-// cara superior de la caja a lo largo de su eje X local (rampas).
+// cara superior de la caja a lo largo de su eje X local (rampas). Una pieza con
+// `geometry: null` solo aporta colisionadores.
+// Un tipo puede devolver también `zones: [{ name, min, max }]`: volúmenes con nombre en
+// coordenadas locales (p. ej. el interior de la cabaña).
 
 const noise = new ValueNoise2D(deriveSeed(CONFIG.seed, 'structures'));
 
@@ -186,6 +191,11 @@ export const STRUCTURE_TYPES = {
     return { pieces, baseY };
   },
 
+  // Cabaña de madera con porche (src/world/cabin.js). El porche mira a +Z local.
+  cabin(params, random, context) {
+    return createCabin(params, random, context);
+  },
+
   // Leñera: troncos apilados en filas con dos estacas. { length, rows }
   woodpile(params, random) {
     const { length = 1.8, rows = 4, logRadius = 0.15 } = params;
@@ -289,13 +299,18 @@ export function createStructure(entry, index, { terrain, materials }) {
   const built = build(entry, random, { ground });
   const list = Array.isArray(built) ? built : built.pieces;
   const pieces = list.map((piece) => {
-    const material = materials[piece.material ?? 'stone'];
-    if (!material) throw new Error(`Material desconocido: "${piece.material}"`);
-    const mesh = new THREE.Mesh(piece.geometry, material);
+    let mesh;
+    if (piece.geometry) {
+      const material = materials[piece.material ?? 'stone'];
+      if (!material) throw new Error(`Material desconocido: "${piece.material}"`);
+      mesh = new THREE.Mesh(piece.geometry, material);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+    } else {
+      mesh = new THREE.Object3D();
+    }
     mesh.position.fromArray(piece.position);
     mesh.rotation.y = piece.rotationY ?? 0;
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
     mesh.userData.piece = piece;
     group.add(mesh);
     return mesh;
@@ -328,7 +343,8 @@ export function createStructure(entry, index, { terrain, materials }) {
       colliders.push(createBoxCollider(mesh, group, { surface }));
     }
   }
-  return { group, colliders };
+  const zones = (Array.isArray(built) ? [] : built.zones ?? []).map((zone) => createZone(zone, group));
+  return { group, colliders, zones };
 }
 
 // Altura mínima del terreno bajo la huella de la estructura (grupo ya colocado en x, z).
@@ -378,14 +394,6 @@ function treePieces({ height = 7, trunkRadius, crownRadius, lobes = 6, autumn = 
 }
 
 // --- Geometrías -------------------------------------------------------------
-
-// Extruye un perfil (plano XY) a lo ancho del eje Z, centrado, con UVs de densidad constante.
-function extrudeAcross(shape, width) {
-  const geometry = new THREE.ExtrudeGeometry(shape, { depth: width, bevelEnabled: false, curveSegments: 1 });
-  geometry.translate(0, 0, -width / 2);
-  geometry.computeVertexNormals();
-  return applyBoxUVs(geometry);
-}
 
 function pillarGeometry(width, height, depth, random) {
   return stoneBoxGeometry(width, height, depth, random, CONFIG.structures.taper);

@@ -13,13 +13,14 @@ export class Vegetation {
       uWindSpeed: { value: v.windSpeed },
     };
     this.random = createRandom(deriveSeed(CONFIG.seed, 'vegetation'));
+    this.dryRandom = createRandom(deriveSeed(CONFIG.seed, 'vegetation-dry'));
     this.clusters = new ValueNoise2D(deriveSeed(CONFIG.seed, 'vegetation-clusters'));
     this.level = level;
     this.terrain = terrain;
     this.colliders = colliders;
 
     const grassGeometry = createTuftGeometry(v.grassBlades, v.grassBaseColor, v.grassTipColor, 0.05, this.random);
-    this.grass = this.createMesh(grassGeometry, gradientMap, v.grassCount, v.grassHeight, true, false);
+    this.grass = this.createMesh(grassGeometry, gradientMap, v.grassCount, v.grassHeight, true, false, true);
     this.grass.name = 'tall-grass';
 
     const flowerGeometry = createFlowerGeometry(v.grassBaseColor);
@@ -42,13 +43,16 @@ export class Vegetation {
   }
 
   // tinted: el color de instancia solo se aplica a los vértices con aTint = 1.
-  createMesh(geometry, gradientMap, count, heightRange, clustered, tinted) {
+  // dry: cada instancia lleva `aDry` (0-1) según las zonas `dryGrass` del nivel.
+  createMesh(geometry, gradientMap, count, heightRange, clustered, tinted, dry = false) {
     const material = new THREE.MeshToonMaterial({ vertexColors: true, gradientMap, side: THREE.DoubleSide });
     material.onBeforeCompile = (shader) => {
       this.addWind(shader);
       if (tinted) addTint(shader);
+      if (dry) addDryness(shader);
     };
-    material.customProgramCacheKey = () => (tinted ? 'vegetation-tinted' : 'vegetation');
+    material.customProgramCacheKey = () => `vegetation${tinted ? '-tinted' : ''}${dry ? '-dry' : ''}`;
+    const dryness = dry ? new Float32Array(count) : null;
     const mesh = new THREE.InstancedMesh(geometry, material, count);
     mesh.receiveShadow = true;
 
@@ -66,12 +70,25 @@ export class Vegetation {
       position.set(point.x, this.terrain.getHeight(point.x, point.z) - 0.02, point.z);
       quaternion.setFromAxisAngle(up, this.random() * Math.PI * 2);
       scale.set(width, height, width);
+      if (dryness) dryness[placed] = this.dryness(point.x, point.z);
       mesh.setMatrixAt(placed++, matrix.compose(position, quaternion, scale));
     }
+    if (dryness) geometry.setAttribute('aDry', new THREE.InstancedBufferAttribute(dryness, 1));
     mesh.count = placed;
     mesh.instanceMatrix.needsUpdate = true;
     mesh.computeBoundingSphere();
     return mesh;
+  }
+
+  // Sequedad de una mata: seca del todo cerca del centro de una zona `dryGrass` y a
+  // manchas (mezcla aleatoria de matas secas y verdes) hacia el borde.
+  dryness(x, z) {
+    let weight = 0;
+    for (const area of this.level.dryGrass ?? []) {
+      const d = Math.hypot(x - area.x, z - area.z);
+      weight = Math.max(weight, 1 - THREE.MathUtils.smoothstep(d, area.radius * CONFIG.vegetation.dryCore, area.radius));
+    }
+    return weight > this.dryRandom() ? 0.75 + this.dryRandom() * 0.25 : 0;
   }
 
   // Punto candidato en una de las zonas del nivel (`vegetationAreas`), elegida por peso.
@@ -196,6 +213,17 @@ function addTint(shader) {
       #ifdef USE_INSTANCING_COLOR
         vColor.rgb = mix(vColor.rgb, vColor.rgb * instanceColor.rgb, aTint);
       #endif`);
+}
+
+// Mezcla el color de la mata con el del pasto seco (de base a punta por la altura).
+function addDryness(shader) {
+  const v = CONFIG.vegetation;
+  shader.uniforms.uDryBase = { value: new THREE.Color(v.dryBaseColor) };
+  shader.uniforms.uDryTip = { value: new THREE.Color(v.dryTipColor) };
+  shader.vertexShader = shader.vertexShader
+    .replace('#include <common>', '#include <common>\nattribute float aDry;\nuniform vec3 uDryBase;\nuniform vec3 uDryTip;')
+    .replace('#include <color_vertex>', `#include <color_vertex>
+      vColor.rgb = mix(vColor.rgb, mix(uDryBase, uDryTip, clamp(position.y, 0.0, 1.0)), aDry);`);
 }
 
 function finishGeometry(positions, colors) {

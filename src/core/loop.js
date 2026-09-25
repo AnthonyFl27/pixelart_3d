@@ -26,7 +26,8 @@ export class GameLoop {
 
   tick(timestamp) {
     this.timer.update(timestamp);
-    const dt = Math.min(this.timer.getDelta(), CONFIG.loop.maxDelta);
+    // El primer timestamp de requestAnimationFrame puede ser anterior al reset (dt < 0).
+    const dt = THREE.MathUtils.clamp(this.timer.getDelta(), 0, CONFIG.loop.maxDelta);
     this.update(dt, this.timer.getElapsed());
     this.render();
   }

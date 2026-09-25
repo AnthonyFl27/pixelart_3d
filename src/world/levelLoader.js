@@ -2,17 +2,19 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { createStructure } from './structures.js';
 
-// Instancia las estructuras de un nivel y devuelve sus colisionadores y los
-// puntos de posado (parte superior de piezas altas, p. ej. dinteles).
+// Instancia las estructuras de un nivel y devuelve sus colisionadores y zonas
+// (volúmenes con nombre, p. ej. el interior de la cabaña).
 // Las piezas se fusionan en una malla por material (1 draw call por material
-// para la escena y otra para el shadow map).
+// para la escena y otra para el shadow map, salvo materiales sin sombra).
 export function loadLevel(level, { scene, terrain, materials }) {
   const colliders = [];
+  const zones = [];
   const geometriesByMaterial = new Map();
 
   level.structures.forEach((entry, index) => {
     const structure = createStructure(entry, index, { terrain, materials });
     colliders.push(...structure.colliders);
+    zones.push(...structure.zones);
     const baseY = structure.group.position.y;
     structure.group.traverse((object) => {
       if (!object.isMesh) return;
@@ -33,12 +35,12 @@ export function loadLevel(level, { scene, terrain, materials }) {
   for (const [material, geometries] of geometriesByMaterial) {
     const mesh = new THREE.Mesh(mergeGeometries(geometries), material);
     mesh.name = `structures-${material.map?.name ?? 'mesh'}`;
-    mesh.castShadow = true;
+    mesh.castShadow = material.userData.castShadow !== false;
     mesh.receiveShadow = true;
     scene.add(mesh);
     meshes.push(mesh);
     geometries.forEach((geometry) => geometry.dispose());
   }
 
-  return { meshes, colliders };
+  return { meshes, colliders, zones };
 }

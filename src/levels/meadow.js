@@ -38,7 +38,8 @@ export const MEADOW = {
         { x: -45, z: 13, width: 1.1 },
         { x: -52, z: 12.2, width: 1.3 },
         { x: -70, z: 11.8, width: 1.3 },
-        { x: -72.5, z: 10.5, width: 1.1 },
+        { x: -73, z: 10.8, width: 1.2 },
+        { x: -74.8, z: 10.4, width: 1.1 },
       ],
     },
   ],
@@ -68,12 +69,18 @@ export const MEADOW = {
     { x: 0, z: 0, radius: 85, weight: 0.72 },
     { stream: true, band: [0.4, 4], weight: 0.2 },
     { x: -80, z: 10, radius: 22, weight: 0.08 },
+    { x: -80, z: 10, radius: 9, weight: 0.05 }, // pasto al pie de la cabaña
+  ],
+
+  // Pasto seco (color pajizo) alrededor de la cabaña: { x, z, radius }.
+  dryGrass: [
+    { x: -81.5, z: 10, radius: 11 },
   ],
 
   // Zonas sin relieve procedural (la cabaña y el puente necesitan suelo tranquilo).
   // `flatten` (0-1) allana además el terreno hacia la altura del centro.
   clearZones: [
-    { x: -78, z: 10, radius: 16, flatten: 0.85 },
+    { x: -81, z: 10, radius: 16, flatten: 0.85 },
     { x: -60, z: 12, radius: 10 },
   ],
 
@@ -110,6 +117,14 @@ export const MEADOW = {
     { type: 'dirtPile', x: 3.6, z: 27, radius: 1.2, height: 0.2 },
     { type: 'dirtPile', x: -3.8, z: 24, radius: 1, height: 0.15 },
     { type: 'dirtPatch', x: 2.8, z: 20.5, radius: 1.2 },
+
+    // Tierra acumulada al pie de la cabaña (escalones, esquinas y chimenea).
+    { type: 'dirtPatch', x: -74.2, z: 10.4, radius: 1.6 },
+    { type: 'dirtPile', x: -81.5, z: 15.3, radius: 1.4, height: 0.3 },
+    { type: 'dirtPile', x: -85.3, z: 5.4, radius: 1.1, height: 0.25 },
+    { type: 'dirtPile', x: -85.2, z: 14.8, radius: 1, height: 0.25 },
+    { type: 'dirtPatch', x: -76, z: 5.3, radius: 0.9 },
+    { type: 'dirtPatch', x: -83, z: 4.9, radius: 0.8, ground: 'mud' },
   ],
 
   // Estructuras. Tipos disponibles (src/world/structures.js):
@@ -124,6 +139,7 @@ export const MEADOW = {
   //   archBridge  { arches, span, pier, abutment, width, headroom, rampLength } puente de piedra (eje X local)
   //   woodpile    { length, rows }                    leñera
   //   fence       { length, spacing, height, broken } valla de madera rota (eje X local)
+  //   cabin       { ...CONFIG.cabin }                  cabaña con porche hacia +Z local
   // Comunes: x, z, rotationY (rad), scale.
   structures: [
     // Anillo de trilitos (radio ≈ 14), orientados hacia el centro.
@@ -184,6 +200,7 @@ export const MEADOW = {
 
     // Zona del riachuelo: puente de dos arcos (cruza de este a oeste) y entorno de la cabaña.
     { type: 'archBridge', x: -61, z: 12, rotationY: 0, arches: 2, span: 2.6, pier: 0.9 },
+    { type: 'cabin', x: -81.5, z: 10, rotationY: 1.5708 }, // porche hacia el este (el puente)
     { type: 'tree', x: -71, z: 24, height: 8, crownRadius: 3.2, lobes: 7, autumn: true },
     { type: 'tree', x: -91, z: 3, height: 9 },
     { type: 'tree', x: -89, z: 25, height: 7.5 },

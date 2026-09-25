@@ -47,17 +47,17 @@ Leyenda: `[ ]` pendiente · `[x]` completada · `[~]` en progreso
 - [x] Tipos `woodpile` (leñera) y `fence` (valla rota)
 
 ## Fase 17 — Cabaña: exterior y estructura
-- [ ] Texturas: tablas gastadas, tablillas, chapa oxidada, celosía y cristal sucio
-- [ ] Paredes de tablas horizontales con tablas sueltas, torcidas o ausentes
-- [ ] Huecos de puerta y ventanas con marcos; cristales de varios paneles (uno roto)
-- [ ] Tejado a dos aguas con tablillas, chapas y agujero con vigas vistas
-- [ ] Porche con techo, 4 postes, barandilla de balaústres y escalones
-- [ ] Chimenea de piedra lateral
-- [ ] Pilotes y zócalo de celosía; suelo interior plano
-- [ ] Pasto seco y tierra acumulada en la base
-- [ ] Tipo `cabin` en `structures.js` y entrada en `meadow.js`
-- [ ] Colisiones: paredes, ventanas, barandillas, porche, escalones y techo
-- [ ] Volumen interior declarado para las zonas
+- [x] Texturas: tablas gastadas, tablillas, chapa oxidada, celosía y cristal sucio
+- [x] Paredes de tablas horizontales con tablas sueltas, torcidas o ausentes
+- [x] Huecos de puerta y ventanas con marcos; cristales de varios paneles (uno roto)
+- [x] Tejado a dos aguas con tablillas, chapas y agujero con vigas vistas
+- [x] Porche con techo, 4 postes, barandilla de balaústres y escalones
+- [x] Chimenea de piedra lateral
+- [x] Pilotes y zócalo de celosía; suelo interior plano
+- [x] Pasto seco y tierra acumulada en la base
+- [x] Tipo `cabin` en `structures.js` y entrada en `meadow.js`
+- [x] Colisiones: paredes, ventanas, barandillas, porche, escalones y techo
+- [x] Volumen interior declarado para las zonas
 
 ## Fase 18 — Sistema de interacción y puerta
 - [ ] `ui/prompt.js`: punto de mira y aviso `[E] …` pixel art

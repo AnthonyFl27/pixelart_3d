@@ -11,6 +11,7 @@ import { Sky } from './world/sky.js';
 import { Lighting } from './world/lighting.js';
 import { DayCycle } from './world/dayCycle.js';
 import { loadLevel } from './world/levelLoader.js';
+import { zoneAt } from './world/zones.js';
 import { Vegetation } from './world/vegetation.js';
 import { StreamWater } from './world/stream.js';
 import { PlayerController } from './player/controller.js';
@@ -56,7 +57,7 @@ if (Number.isFinite(startHour)) {
 }
 // Las rocas del cauce se añaden como estructuras del nivel.
 const streamRocks = terrain.stream ? terrain.stream.rockEntries() : [];
-const { colliders } = loadLevel({ ...level, structures: [...level.structures, ...streamRocks] }, { scene, terrain, materials });
+const { colliders, zones } = loadLevel({ ...level, structures: [...level.structures, ...streamRocks] }, { scene, terrain, materials });
 const streamWater = terrain.stream ? new StreamWater(terrain.stream, textures.noise) : null;
 if (streamWater) scene.add(streamWater.mesh);
 const vegetation = new Vegetation(level, terrain, colliders, materials.gradientMap);
@@ -163,6 +164,7 @@ const loop = new GameLoop(renderer, {
       clock: `${dayCycle.clock} ${day.phase}`,
       birds: `${birds.visibleCount} (${birds.perchedCount} posados)`,
       surface: player.surface,
+      zone: zoneAt(zones, player.position)?.name ?? 'exterior',
       water: audio.water ? `${audio.water.distance.toFixed(1)} m vol ${audio.water.volume.toFixed(2)}` : '-',
     });
     input.endFrame();
