@@ -223,6 +223,42 @@
   image-rendering: pixelated;
 }
 
+/* Munición junto a la barra: dos cartuchos (canvas escalado x3) y la reserva. */
+.ammo {
+  position: absolute;
+  left: calc(50% + 152px);
+  bottom: 22px;
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  padding: 6px 8px;
+  background: rgba(10, 16, 24, 0.55);
+  border: 3px solid rgba(244, 248, 251, 0.5);
+}
+
+.ammo[hidden] {
+  display: none;
+}
+
+.ammo__shell {
+  width: 15px;
+  height: 36px;
+  image-rendering: pixelated;
+}
+
+.ammo__reserve {
+  font-size: 10px;
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.6);
+}
+
+@media (max-width: 480px) {
+  .ammo {
+    left: auto;
+    right: 8px;
+    bottom: 80px;
+  }
+}
+
 /* Cantidad de la pila en cifras pixel (canvas escalado x2). */
 .hotbar__count {
   position: absolute;

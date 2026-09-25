@@ -2,9 +2,10 @@ import { CONFIG } from '../config.js';
 import { Footsteps } from './footsteps.js';
 import { WaterAudio } from './water.js';
 import { Sfx } from './sfx.js';
+import { Gunshot } from './gunshot.js';
 
 // Audio procedural con Web Audio (sin archivos): viento de fondo, pasos (footsteps.js),
-// riachuelo (water.js) y efectos puntuales (sfx.js). El oyente sigue a la cámara para las fuentes posicionales.
+// riachuelo (water.js), efectos puntuales (sfx.js) y escopeta (gunshot.js). El oyente sigue a la cámara para las fuentes posicionales.
 // El AudioContext se crea en `start()`, que debe llamarse tras un gesto del usuario.
 export class AmbientAudio {
   constructor() {
@@ -31,6 +32,7 @@ export class AmbientAudio {
     this.footsteps = new Footsteps(ctx, this.master);
     this.water = new WaterAudio(ctx, this.master);
     this.sfx = new Sfx(ctx, this.master);
+    this.gunshot = new Gunshot(ctx, this.master, this.sfx);
     this.forward = { x: 0, y: 0, z: -1 };
   }
 
@@ -70,6 +72,12 @@ export class AmbientAudio {
   playSfx(name, position, options) {
     if (!this.sfx || this.muted || this.context.state !== 'running') return;
     this.sfx[name](position, options);
+  }
+
+  // Sonido de la escopeta (gunshot.js): 'fire', 'dry', 'open', 'eject', 'insert', 'close', 'casing'.
+  playGun(name, ...args) {
+    if (!this.gunshot || this.muted || this.context.state !== 'running') return;
+    this.gunshot[name](...args);
   }
 
   // Efecto continuo de sfx.js ('tube'…) en `position`: devuelve { stop() } o null sin audio.

@@ -30,7 +30,7 @@ export const CABIN_LAYOUT = {
 
   furniture: [
     // --- Sala ---
-    { type: 'fireplace', x: WALL.left, z: 0, rotationY: HALF_PI, top: 2.8 },
+    { type: 'fireplace', x: WALL.left, z: 0, rotationY: HALF_PI, top: 2.8, surface: 'stone' },
     { type: 'gunRack', x: WALL.left + 0.4, y: 1.75, z: 0, rotationY: HALF_PI, name: 'shotgun' },
     { type: 'logs', x: -4.05, z: 1.25, rotationY: 0.3 },
     { type: 'rug', x: -2.35, z: -0.3, width: 2.2, depth: 2.3 },
@@ -52,7 +52,7 @@ export const CABIN_LAYOUT = {
 
     // --- Cocina ---
     { type: 'counter', x: 3.75, z: WALL.back, width: 1.3, sink: 0, pump: -0.45 },
-    { type: 'woodStove', x: WALL.right, z: -1.3, rotationY: -HALF_PI, pipeTop: 2.8 },
+    { type: 'woodStove', x: WALL.right, z: -1.3, rotationY: -HALF_PI, pipeTop: 2.8, surface: 'stone' },
     { type: 'pans', x: WALL.right, z: -0.45, rotationY: -HALF_PI, hang: 1.6, width: 0.7 },
     { type: 'shelf', x: WALL.right, z: -2.35, rotationY: -HALF_PI, width: 0.7, heights: [1.3, 1.7], items: 4 },
     { type: 'shelf', x: PARTITION + 0.05, z: 2.4, rotationY: HALF_PI, width: 1, heights: [1.4, 1.78], items: 5 },

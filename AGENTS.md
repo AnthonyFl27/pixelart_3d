@@ -76,12 +76,15 @@ pixelart_3d/
 │   ├── player/
 │   │   ├── controller.js       # Primera persona: andar, correr, saltar, volar
 │   │   └── collision.js        # Cajas orientadas, suelo y techo
+│   ├── combat/
+│   │   ├── ballistics.js       # Perdigones: rayos con dispersión contra colisionadores, agua y terreno
+│   │   └── impacts.js          # Partículas de impacto, humo, marcas de agujero y vainas recicladas
 │   ├── items/
 │   │   ├── inventory.js        # Ranuras con pilas, addItem, límites y catálogo de objetos
 │   │   ├── viewModel.js        # Base de los objetos en primera persona: sacar/guardar y balanceo
 │   │   ├── handLight.js        # Luz de mano compartida por antorcha y farol
 │   │   ├── torch.js            # Antorcha en primera persona: llama y chispas
-│   │   ├── shotgun.js          # Escopeta de doble cañón: iconos (escopeta, cartuchos) y modelo
+│   │   ├── shotgun.js          # Escopeta: iconos, modelo, cañones, disparo, recarga y fogonazo
 │   │   └── lantern.js          # Farol de aceite: icono y modelo que se balancea
 │   ├── interaction/
 │   │   ├── interaction.js      # Rayo desde la cámara, objeto apuntado, tecla E y tipos interactivos
@@ -94,12 +97,13 @@ pixelart_3d/
 │   ├── fauna/birds.js          # Pájaros: bandadas, posado, actividad según la hora
 │   ├── levels/meadow.js        # Nivel como datos (spawn, caminos, relieve, estructuras)
 │   ├── levels/cabinLayout.js   # Distribución interior de la cabaña (tabique, revestimientos, muebles)
-│   ├── ui/                     # overlay.js (inicio/pausa), hud.js (F3), hotbar.js, prompt.js (mira y aviso [E]), ui.css
+│   ├── ui/                     # overlay.js (inicio/pausa), hud.js (F3), hotbar.js, prompt.js (mira y aviso [E]), ammo.js (cartuchos), ui.css
 │   └── audio/
 │       ├── ambient.js          # Viento, trinos y bus maestro (Web Audio)
 │       ├── footsteps.js        # Pasos por superficie (césped, tierra, piedra)
 │       ├── water.js            # Sonido procedural del riachuelo según distancia y dirección
-│       └── sfx.js              # Efectos con posición: bisagra, golpe y pestillo, clic, tubo de la tele, recoger
+│       ├── sfx.js              # Efectos con posición: bisagra, golpe y pestillo, clic, tubo de la tele, recoger
+│       └── gunshot.js          # Estampido con eco exterior / reverb interior y compresor; recarga y vainas
 ├── sdd/                        # Spec-Driven Development
 │   ├── specs/spec_v1.md        # Especificación del prototipo
 │   ├── specs/spec_v2.md        # Mundo vivo: día/noche, antorcha, fauna y entorno
@@ -176,10 +180,14 @@ pixelart_3d/
   y `?pos=-82,7.8,0` (cocina). Sentado, `E` sin objeto apuntado, `Espacio` o `WASD` levantan.
 - Recoger: `?pos=-81.2,12.9,3.14` (escopeta sobre la chimenea, mirar arriba), `?pos=-80.5,7.9,0`
   (cartuchos en la mesa de la cocina, mirar abajo) y `?pos=-79.55,6.4,0&hora=21` (farol en la pared).
+- Escopeta: coger la escopeta y los cartuchos (`?pos=-81.2,13.1,3.14`, escopeta arriba y cartuchos de la
+  mesa baja detrás a la izquierda), `R` recarga y clic izquierdo dispara (primero el cañón derecho). Sin
+  cartucho: clic en seco y `[R] Recargar` o `Sin munición`. `F3` muestra `MUNI` (cañones y reserva).
 - Mantener `T` acelera el tiempo.
 - Revisar visualmente contra la imagen/video de referencia.
 - Comprobar controles: movimiento, cámara, salto, colisión con estructuras, pausa, inventario, antorcha, puertas,
-  asientos, lámpara, televisor y objetos recogibles (límite de 20 cartuchos y recogida parcial).
+  asientos, lámpara, televisor, objetos recogibles (límite de 20 cartuchos y recogida parcial) y escopeta
+  (disparo, recarga, impactos por superficie, cancelar la recarga al cambiar de ranura).
 
 ## Commits
 

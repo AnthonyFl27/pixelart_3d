@@ -67,6 +67,19 @@ export class ViewModel {
     this.model.rotation.set(c.viewRotation.x, c.viewRotation.y, c.viewRotation.z + this.sway * 2);
     return true;
   }
+
+  // Punto `local` de `object` (en la escena de la vista, matrices al día) → mundo. La vista
+  // y el mundo tienen distinto campo de visión: el punto se alinea en pantalla con la cámara
+  // del mundo, a la misma distancia del ojo.
+  viewToWorld(object, local, worldCamera, target) {
+    const point = target.copy(local).applyMatrix4(object.matrixWorld);
+    const distance = point.length();
+    point.project(this.camera);
+    point.z = 0.5;
+    worldCamera.updateMatrixWorld();
+    point.unproject(worldCamera).sub(worldCamera.position).normalize();
+    return point.multiplyScalar(distance).add(worldCamera.position);
+  }
 }
 
 // Textura pixel de 4x16 con colores al azar de `colors` (vetas de madera, metal).

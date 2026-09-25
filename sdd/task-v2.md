@@ -104,21 +104,21 @@ Leyenda: `[ ]` pendiente · `[x]` completada · `[~]` en progreso
 - [x] Sonidos al recoger objetos y traqueteo de cartuchos
 
 ## Fase 22 — Escopeta: disparo y recarga
-- [ ] Máquina de estados de la escopeta y estado por cañón (`loaded`, `spent`, `empty`), conservado al guardarla
-- [ ] Disparo con clic izquierdo, primero el cañón derecho y luego el izquierdo
-- [ ] Clic en seco sin cartucho; avisos `[R] Recargar` y `Sin munición`
-- [ ] Animación de retroceso y sacudida de cámara
-- [ ] Fogonazo pixel art por fotogramas y luz de fogonazo (siempre presente, intensidad 0 en reposo)
-- [ ] Humo pixel desde la boca del cañón
-- [ ] `ballistics.js`: 8 perdigones con dispersión ≈ 4° y alcance ≈ 40 m contra terreno, colisionadores y agua
-- [ ] `impacts.js`: polvo, esquirlas, astillas, salpicaduras y marcas de agujero recicladas
-- [ ] Recarga con `R`: abrir, expulsar vainas, insertar 1–2 cartuchos uno a uno, cerrar
-- [ ] Vainas expulsadas que caen al suelo y desaparecen
-- [ ] Cancelar la recarga al cambiar de ranura; no disparar al recargar, sacar/guardar o sentado
-- [ ] `gunshot.js`: estampido con eco exterior y reverb interior, con compresor
-- [ ] Sonidos de apertura, expulsión, inserción, cierre y clic en seco
-- [ ] `ui/ammo.js`: dos iconos de cartucho y reserva `×N` junto a la barra
-- [ ] Pájaros cercanos que huyen al disparar
+- [x] Máquina de estados de la escopeta y estado por cañón (`loaded`, `spent`, `empty`), conservado al guardarla
+- [x] Disparo con clic izquierdo, primero el cañón derecho y luego el izquierdo
+- [x] Clic en seco sin cartucho; avisos `[R] Recargar` y `Sin munición`
+- [x] Animación de retroceso y sacudida de cámara
+- [x] Fogonazo pixel art por fotogramas y luz de fogonazo (siempre presente, intensidad 0 en reposo)
+- [x] Humo pixel desde la boca del cañón
+- [x] `ballistics.js`: 8 perdigones con dispersión ≈ 4° y alcance ≈ 40 m contra terreno, colisionadores y agua
+- [x] `impacts.js`: polvo, esquirlas, astillas, salpicaduras y marcas de agujero recicladas
+- [x] Recarga con `R`: abrir, expulsar vainas, insertar 1–2 cartuchos uno a uno, cerrar
+- [x] Vainas expulsadas que caen al suelo y desaparecen
+- [x] Cancelar la recarga al cambiar de ranura; no disparar al recargar, sacar/guardar o sentado
+- [x] `gunshot.js`: estampido con eco exterior y reverb interior, con compresor
+- [x] Sonidos de apertura, expulsión, inserción, cierre y clic en seco
+- [x] `ui/ammo.js`: dos iconos de cartucho y reserva `×N` junto a la barra
+- [x] Pájaros cercanos que huyen al disparar
 
 ## Fase 23 — Acústica de zonas y pasos nuevos
 - [ ] `audio/acoustics.js`: detección de zona interior y estado de la puerta

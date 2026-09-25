@@ -1,5 +1,6 @@
 // Estado de teclado y ratón. Las teclas se identifican por `KeyboardEvent.code`
-// (independiente de la distribución del teclado: 'KeyW', 'Space', 'ShiftLeft'...).
+// (independiente de la distribución del teclado: 'KeyW', 'Space', 'ShiftLeft'...) y los
+// botones del ratón sobre el canvas como 'Mouse0' (izquierdo), 'Mouse1', 'Mouse2'.
 
 const PREVENT_DEFAULT = new Set([
   'Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'F3', 'ControlLeft', 'ControlRight',
@@ -28,8 +29,15 @@ export class Input {
     window.addEventListener('blur', () => this.down.clear());
 
     // Sin Pointer Lock (no soportado o denegado) se puede mirar arrastrando.
-    element.addEventListener('mousedown', () => { this.dragging = true; });
-    window.addEventListener('mouseup', () => { this.dragging = false; });
+    element.addEventListener('mousedown', (e) => {
+      this.dragging = true;
+      this.pressed.add(`Mouse${e.button}`);
+      this.down.add(`Mouse${e.button}`);
+    });
+    window.addEventListener('mouseup', (e) => {
+      this.dragging = false;
+      this.down.delete(`Mouse${e.button}`);
+    });
     window.addEventListener('mousemove', (e) => {
       if (!this.locked && !this.dragging) return;
       // Algunos navegadores envían picos enormes de movementX/Y al capturar el ratón.

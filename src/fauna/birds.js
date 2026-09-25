@@ -250,6 +250,30 @@ export class Birds {
     this.onChirp(THREE.MathUtils.clamp(toBird.dot(right), -1, 1), 1 - distance / b.chirpDistance);
   }
 
+  // Disparo en `origin`: los pájaros a menos de `radius` levantan el vuelo y se alejan
+  // (las bandadas, juntas).
+  scare(origin, radius) {
+    const b = CONFIG.birds;
+    for (const bird of this.birds) {
+      if (bird.state === 'hidden' || bird.state === 'leave') continue;
+      if (bird.position.distanceTo(origin) > radius) continue;
+      if (bird.state === 'perched' || bird.state === 'land') this.takeOff(bird);
+      const away = this.tmp.copy(bird.position).sub(origin).setY(0);
+      if (away.lengthSq() < 1e-6) away.set(this.random() - 0.5, 0, this.random() - 0.5);
+      away.normalize();
+      const target = bird.position.clone().addScaledVector(away, b.fleeDistance);
+      target.y = this.terrain.getHeight(target.x, target.z) + b.maxAltitude;
+      bird.target = target;
+      bird.timer = this.randomRange(b.retargetTime);
+      bird.velocity.copy(away).multiplyScalar(b.maxSpeed).setY(b.maxSpeed * 0.5);
+      const flock = this.flocks[bird.flock];
+      if (flock) {
+        flock.target = target;
+        flock.timer = this.randomRange(b.retargetTime);
+      }
+    }
+  }
+
   takeOff(bird) {
     const b = CONFIG.birds;
     this.releasePerch(bird);

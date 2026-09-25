@@ -27,6 +27,10 @@ import { Torch } from './items/torch.js';
 import { Shotgun } from './items/shotgun.js';
 import { Lantern } from './items/lantern.js';
 import { HandLight } from './items/handLight.js';
+import { Ballistics } from './combat/ballistics.js';
+import { Impacts } from './combat/impacts.js';
+import { Ammo } from './ui/ammo.js';
+import { createRandom, deriveSeed } from './core/noise.js';
 import { AmbientAudio } from './audio/ambient.js';
 import { Birds } from './fauna/birds.js';
 import { MEADOW } from './levels/meadow.js';
@@ -106,10 +110,40 @@ for (const viewModel of Object.values(viewModels)) pipeline.addOverlay(viewModel
 const handLight = new HandLight();
 scene.add(handLight.light);
 
+// Escopeta: perdigones contra el mundo, impactos, humo, vainas, sonido y pájaros que huyen.
+const ballistics = new Ballistics({ terrain, colliders });
+const impacts = new Impacts({ terrain, colliders }, { onCasingLand: (position) => audio.playGun('casing', position) });
+scene.add(impacts.object, shotgun.flashLight);
+const pelletRandom = createRandom(deriveSeed(CONFIG.seed, 'pellets'));
+const shot = { forward: new THREE.Vector3(), point: new THREE.Vector3(), velocity: new THREE.Vector3(), axis: new THREE.Vector3() };
+shotgun.hooks = {
+  fire(barrel) {
+    camera.getWorldDirection(shot.forward);
+    for (const hit of ballistics.fire(camera.position, shot.forward, pelletRandom)) impacts.hit(hit);
+    impacts.muzzleSmoke(shotgun.muzzleWorld(barrel, camera, shot.point), shot.forward);
+    player.kick(CONFIG.shotgun.cameraKick);
+    audio.playGun('fire', { indoor });
+    birds.scare(player.position, CONFIG.shotgun.scareRadius);
+  },
+  // Vainas disparadas: salen de la recámara hacia arriba, a un lado y hacia atrás.
+  eject(barrels) {
+    const e = CONFIG.impacts.casingSpeed;
+    for (const barrel of barrels) {
+      const vary = () => 0.8 + Math.random() * 0.4;
+      shot.velocity.set(0, e.up * vary(), 0)
+        .addScaledVector(shot.axis.set(1, 0, 0).applyQuaternion(camera.quaternion), e.side * vary())
+        .addScaledVector(shot.axis.set(0, 0, 1).applyQuaternion(camera.quaternion), e.back * vary());
+      impacts.ejectCasing(shotgun.chamberWorld(barrel, camera, shot.point), shot.velocity);
+    }
+  },
+  sound: (name) => audio.playGun(name),
+};
+
 const ui = document.getElementById('ui');
 const hud = new Hud(ui, CONFIG.debug.showHud);
 const hotbar = new Hotbar(ui, inventory);
 const prompt = new Prompt(ui, CONFIG.interaction.key.replace('Key', ''));
+const ammo = new Ammo(ui);
 const overlay = new Overlay(ui, { title: level.name, onStart: start });
 
 // Estados: 'start' -> 'playing' <-> 'paused'.
@@ -160,7 +194,9 @@ const loop = new GameLoop(renderer, {
     if (state === 'playing') {
       player.update(dt, input);
       inventory.update(input);
-      prompt.show(interaction.update(dt, input, { player, audio, inventory }));
+      const action = interaction.update(dt, input, { player, audio, inventory });
+      if (inventory.equippedItem?.id === 'shotgun') shotgun.control(dt, input, { player, inventory });
+      prompt.show(action ?? shotgun.prompt);
       dayCycle.update(dt * (input.isDown('KeyT') ? CONFIG.dayCycle.fastForward : 1));
     } else {
       input.consumeMouse();
@@ -182,9 +218,11 @@ const loop = new GameLoop(renderer, {
     const equipped = inventory.equippedItem?.id;
     const holstering = Object.entries(viewModels).some(([id, viewModel]) => id !== equipped && viewModel.visible);
     for (const [id, viewModel] of Object.entries(viewModels)) {
-      viewModel.update(dt, { active: id === equipped && !holstering, player, day });
+      viewModel.update(dt, { active: id === equipped && !holstering, player, day, camera });
     }
     handLight.update(dt, camera, [torch, lantern]);
+    impacts.update(state === 'playing' ? dt : 0);
+    ammo.update(equipped === 'shotgun', shotgun.barrelState, inventory.count(CONFIG.ammo.item));
     streamWater?.update(dt, day);
     audio.updateListener(camera);
     audio.updateWater(dt, player.position, terrain.stream);
@@ -201,6 +239,7 @@ const loop = new GameLoop(renderer, {
       surface: player.surface,
       zone: zone?.name ?? 'exterior',
       target: interaction.target ? `${interaction.target.name} (${interaction.promptText})` : '-',
+      ammo: `${shotgun.barrelState.join(' ')} +${inventory.count(CONFIG.ammo.item)}${shotgun.reloading ? ' (recargando)' : ''}`,
       water: audio.water ? `${audio.water.distance.toFixed(1)} m vol ${audio.water.volume.toFixed(2)}` : '-',
     });
     input.endFrame();

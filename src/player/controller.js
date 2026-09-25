@@ -28,6 +28,9 @@ export class PlayerController {
     this.seatTarget = 0;
     this.seatYaw = 0;
     this.seatEye = new THREE.Vector3();
+    // Sacudida de la cámara (disparo): sube rápido hacia `kickTarget` y se recupera suave.
+    this.kickPitch = 0;
+    this.kickTarget = 0;
 
     this.body = {
       radius: CONFIG.player.radius,
@@ -67,8 +70,20 @@ export class PlayerController {
     this.seatTarget = 0;
   }
 
+  // Sacude la cámara hacia arriba `degrees` (retroceso del disparo).
+  kick(degrees) {
+    this.kickTarget += THREE.MathUtils.degToRad(degrees);
+  }
+
+  updateKick(dt) {
+    const { kickRise, kickRecover } = CONFIG.player;
+    this.kickPitch += (this.kickTarget - this.kickPitch) * Math.min(1, dt * kickRise);
+    this.kickTarget *= Math.exp(-dt * kickRecover);
+  }
+
   update(dt, input) {
     const p = CONFIG.player;
+    this.updateKick(dt);
     if (this.seat) {
       this.updateSeated(dt, input);
       this.updateCamera();
@@ -240,6 +255,6 @@ export class PlayerController {
       z += (this.seatEye.z - z) * t;
     }
     this.camera.position.set(snap(x), snap(y), snap(z));
-    this.camera.rotation.set(this.pitch, this.yaw, 0);
+    this.camera.rotation.set(this.pitch + this.kickPitch, this.yaw, 0);
   }
 }

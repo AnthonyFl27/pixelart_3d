@@ -657,6 +657,8 @@ export const CONFIG = {
     boundsMargin: 20,      // distancia mínima al borde del terreno
     wadeSpeedFactor: 0.55, // velocidad al vadear el riachuelo (sin correr)
     wadeMinDepth: 0.05,    // profundidad mínima del agua para contar como vadeo
+    kickRise: 40,          // 1/s: subida de la sacudida de la cámara (disparo)
+    kickRecover: 7,        // 1/s: recuperación suave de la sacudida
   },
 
   audio: {
@@ -709,6 +711,28 @@ export const CONFIG = {
         latchFrequency: 2600,
         latchGain: 0.35,
       },
+    },
+    // Escopeta (src/audio/gunshot.js): estampido, eco exterior, reverb interior y recarga.
+    gunshot: {
+      volume: 0.9,
+      crack: { frequency: 2400, gain: 1.1, decay: 0.012 },
+      boom: { frequency: 70, drop: 0.45, gain: 1.4, decay: 0.12, lowpass: 700 },
+      tail: { lowpass: 1600, gain: 0.45, decay: 0.35 },
+      // Eco al aire libre: rebotes retardados, cada vez más graves y débiles.
+      echoes: [
+        { delay: 0.32, gain: 0.32, lowpass: 1400 },
+        { delay: 0.71, gain: 0.2, lowpass: 900 },
+        { delay: 1.18, gain: 0.12, lowpass: 600 },
+        { delay: 1.75, gain: 0.06, lowpass: 450 },
+      ],
+      room: { duration: 0.55, decay: 3.5, wet: 0.5 }, // reverb corta y seca dentro de la cabaña
+      compressor: { threshold: -14, knee: 6, ratio: 8, attack: 0.002, release: 0.25 },
+      dry: { frequency: 3400, gain: 0.5 },
+      open: { frequency: 1800, gain: 0.45 },
+      eject: { frequency: 3200, gain: 0.3 },
+      insert: { frequency: 1200, gain: 0.35 },
+      close: { frequency: 1500, gain: 0.8 },
+      casing: { frequency: [3800, 5200], gain: 0.12 },
     },
     // Riachuelo (src/audio/water.js): volumen según la distancia a la orilla más cercana.
     water: {
@@ -785,6 +809,7 @@ export const CONFIG = {
     perchHeight: 2.5,      // altura mínima de una piedra para posarse
     perchTime: [8, 22],
     scareDistance: 6,      // el jugador los espanta a esta distancia
+    fleeDistance: 70,      // al oír un disparo huyen hasta esta distancia
     roostDistance: 170,    // adonde se van al anochecer
     hideDistance: 150,
     color: 0x3e3630,
@@ -957,7 +982,59 @@ export const CONFIG = {
     bobAmount: 0.01,
     swayAmount: 0.3,
     keyLight: 0.8,         // luz de apoyo de la vista (fracción de la luz del día)
+    // Disparo (spec v3, 4.12).
+    fireButton: 'Mouse0',  // clic izquierdo
+    reloadKey: 'KeyR',
+    fireCooldown: 0.35,    // segundos entre disparos
+    recoil: { back: 0.09, up: 0.22, lift: 0.02, recover: 9 }, // retroceso del modelo (u, rad, 1/s)
+    cameraKick: 2,         // grados de sacudida de la cámara (pitch)
+    flash: {
+      frames: 3,           // fotogramas pixel art del fogonazo
+      frameTime: 0.035,    // segundos por fotograma
+      size: 0.16,          // tamaño del plano en la vista (u)
+      light: { color: 0xffc070, intensity: 14, distance: 16, decay: 1.4, duration: 0.09 },
+    },
+    smoke: { count: 14, speed: [0.4, 1.4], rise: 0.5, life: [0.5, 0.9] },
+    pellets: 8,
+    spread: 4,             // grados: desviación máxima de cada perdigón respecto a la mira
+    range: 40,             // alcance de los perdigones (u)
+    terrainStep: 0.2,      // paso del rayo contra el terreno y el agua (u)
+    scareRadius: 40,       // los pájaros a esta distancia huyen al oír el disparo
+    hintTime: 2,           // segundos del aviso `[R] Recargar` / `Sin munición`
+    reloadText: 'Recargar',
+    noAmmoText: 'Sin munición',
+    // Recarga (≈ 2,2 s con dos cartuchos): bajar, abrir, expulsar, meter cada cartucho, cerrar, subir.
+    reload: { lower: 0.3, open: 0.2, eject: 0.25, insert: 0.45, close: 0.2, raise: 0.3 },
+    reloadPose: { left: 0.07, down: -0.04, back: 0.02, pitch: -0.25, roll: 0.3 }, // se acerca al centro y enseña las recámaras
+    hingeAngle: 0.65,      // rad: apertura de los cañones
   },
+
+  // Partículas de impacto, humo, marcas y vainas (src/combat/impacts.js).
+  impacts: {
+    maxParticles: 320,
+    maxSmoke: 60,
+    maxMarks: 40,          // marcas de agujero recicladas
+    markSize: 0.06,
+    maxCasings: 6,
+    casingLife: 4,         // segundos hasta que desaparece una vaina en el suelo
+    casingBounce: 0.35,
+    casingSpeed: { side: 1.3, up: 2.2, back: 0.9 }, // expulsión respecto a la cámara (u/s)
+    gravity: 9.8,
+    dust: 3,               // bocanadas de polvo por impacto en suelo o piedra
+    smokeColors: [0xd0d0d0, 0xb8b8b8, 0x9a9a9a],
+    // Por superficie: número de partículas, colores, velocidad, vida (s) y tinte del borde
+    // de la marca de agujero (null: sin marca). `dust`: bocanadas de polvo del color del suelo.
+    surfaces: {
+      grass: { count: 10, colors: [0x5a4630, 0x7a6040, 0x4a7a2a, 0x9a8a60], speed: [1, 3], life: [0.35, 0.7], mark: null },
+      dirt: { count: 10, colors: [0x5a4630, 0x7a6040, 0x8a7050, 0x3a2e20], speed: [1, 3], life: [0.35, 0.7], mark: null },
+      mud: { count: 8, colors: [0x3a2e20, 0x4a3a28, 0x2a2218], speed: [0.8, 2.2], life: [0.3, 0.6], mark: null },
+      gravel: { count: 10, colors: [0x8a8680, 0x6a6660, 0x5a4630, 0xa09a90], speed: [1.5, 3.5], life: [0.3, 0.6], mark: null },
+      stone: { count: 10, colors: [0xb0aca4, 0x8a8680, 0xfff0c0, 0x6a6660], speed: [2, 4.5], life: [0.25, 0.55], mark: 0xc8c4bc },
+      wood: { count: 9, colors: [0xc8a070, 0x9a7048, 0x6a4a2c, 0xe0c090], speed: [1.5, 3.5], life: [0.35, 0.7], mark: 0xe8c898 },
+      water: { count: 12, colors: [0xe8f4ff, 0xb0d4f0, 0x6aa0d0, 0xffffff], speed: [1.5, 3.5], life: [0.35, 0.7], mark: null, up: true },
+    },
+  },
+
 
   debug: {
     showHud: false,
