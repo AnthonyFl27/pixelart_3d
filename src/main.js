@@ -14,6 +14,9 @@ import { loadLevel } from './world/levelLoader.js';
 import { PlayerController } from './player/controller.js';
 import { Overlay } from './ui/overlay.js';
 import { Hud } from './ui/hud.js';
+import { Hotbar } from './ui/hotbar.js';
+import { Inventory } from './items/inventory.js';
+import { Torch } from './items/torch.js';
 import { AmbientAudio } from './audio/ambient.js';
 import { MEADOW } from './levels/meadow.js';
 
@@ -56,8 +59,14 @@ const player = new PlayerController(camera, terrain, colliders, level.spawn, {
   onStep: (surface) => audio.step(surface),
 });
 
+const inventory = new Inventory();
+const torch = new Torch();
+scene.add(torch.light);
+pipeline.addOverlay(torch);
+
 const ui = document.getElementById('ui');
 const hud = new Hud(ui, CONFIG.debug.showHud);
+const hotbar = new Hotbar(ui, inventory);
 const overlay = new Overlay(ui, { title: level.name, onStart: start });
 
 // Estados: 'start' -> 'playing' <-> 'paused'.
@@ -107,6 +116,7 @@ const loop = new GameLoop(renderer, {
   update(dt) {
     if (state === 'playing') {
       player.update(dt, input);
+      inventory.update(input);
       dayCycle.update(dt * (input.isDown('KeyT') ? CONFIG.dayCycle.fastForward : 1));
     } else {
       input.consumeMouse();
@@ -118,6 +128,7 @@ const loop = new GameLoop(renderer, {
     sky.update(dt, camera, day);
     lighting.update(player.position, camera, day);
     scene.fog.color.copy(day.horizon);
+    torch.update(dt, { active: inventory.activeItem?.id === 'torch', player, camera, day });
     hud.update(dt, {
       position: player.position,
       mode: player.mode,

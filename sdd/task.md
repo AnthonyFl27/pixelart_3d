@@ -99,11 +99,11 @@ Leyenda: `[ ]` pendiente · `[x]` completada · `[~]` en progreso
 - [x] HUD con hora y fase; tecla `T` para acelerar el tiempo
 
 ## Fase 10 — Inventario y antorcha
-- [ ] `inventory.js` con 5 ranuras, teclas `1`–`5`, rueda y `Q`
-- [ ] `hotbar.js`: barra pixel art con iconos y ranura activa
-- [ ] Modelo de antorcha en primera persona con balanceo y sacar/guardar
-- [ ] Llama pixel art animada y chispas
-- [ ] Luz cálida con parpadeo que ilumina el entorno (sin sombras, siempre en escena)
+- [x] `inventory.js` con 5 ranuras, teclas `1`–`5`, rueda y `Q`
+- [x] `hotbar.js`: barra pixel art con iconos y ranura activa
+- [x] Modelo de antorcha en primera persona con balanceo y sacar/guardar
+- [x] Llama pixel art animada y chispas
+- [x] Luz cálida con parpadeo que ilumina el entorno (sin sombras, siempre en escena)
 
 ## Fase 11 — Entorno
 - [ ] Tipos `rubble`/`pebbles` y más rocas dispersas

@@ -10,6 +10,7 @@ export class PixelPipeline {
     this.scene = scene;
     this.camera = camera;
     this.scale = 1;
+    this.overlays = [];
     renderer.info.autoReset = false;
 
     this.target = new THREE.WebGLRenderTarget(1, 1, {
@@ -67,6 +68,14 @@ export class PixelPipeline {
 
     this.camera.aspect = internalWidth / internalHeight;
     this.camera.updateProjectionMatrix();
+    for (const overlay of this.overlays) overlay.setAspect(this.camera.aspect);
+  }
+
+  // Capa dibujada encima de la escena (con su propio depth), p. ej. objetos en la mano.
+  // overlay: { scene, camera, visible, setAspect(aspect) }.
+  addOverlay(overlay) {
+    this.overlays.push(overlay);
+    overlay.setAspect(this.camera.aspect);
   }
 
   get internalSize() {
@@ -93,6 +102,13 @@ export class PixelPipeline {
     this.syncUniforms();
     this.renderer.setRenderTarget(this.target);
     this.renderer.render(this.scene, this.camera);
+    for (const overlay of this.overlays) {
+      if (!overlay.visible) continue;
+      this.renderer.autoClear = false;
+      this.renderer.clearDepth();
+      this.renderer.render(overlay.scene, overlay.camera);
+      this.renderer.autoClear = true;
+    }
     this.renderer.setRenderTarget(null);
     this.renderer.render(this.quadScene, this.quadCamera);
   }

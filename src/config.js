@@ -283,6 +283,36 @@ export const CONFIG = {
     },
   },
 
+  inventory: {
+    slots: 5,
+    startItems: ['torch'], // ids de ITEMS (src/items/inventory.js) por ranura
+    startSlot: -1,         // -1 = mano vacía
+  },
+
+  torch: {
+    lightColor: 0xffa04a,
+    lightIntensity: 10,
+    lightDistance: 14,     // alcance máximo (u)
+    lightDecay: 1.3,
+    lightOffset: { x: 0.35, y: -0.1, z: -0.5 }, // posición de la llama respecto a la cámara
+    lightJitter: 0.03,     // temblor de la posición de la luz (u)
+    flicker: 0.18,         // amplitud del parpadeo (0-1)
+    handLightIntensity: 1.6,
+    handLightOffset: { x: -0.06, y: 0.1, z: 0.18 }, // respecto a la cabeza de la antorcha
+    flameFrames: 8,
+    flameFps: 12,
+    flameBrightness: 1.6,
+    sparkCount: 10,
+    equipSpeed: 4,         // 1 / segundos para sacar o guardar
+    viewFov: 55,
+    viewPosition: { x: 0.34, y: -0.24, z: -0.8 },
+    viewScale: 0.8,
+    viewRotation: { x: -0.25, y: 0, z: -0.3 },
+    bobFrequency: 1.5,
+    bobAmount: 0.012,
+    swayAmount: 0.4,
+  },
+
   debug: {
     showHud: false,
   },

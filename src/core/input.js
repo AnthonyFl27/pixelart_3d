@@ -14,6 +14,7 @@ export class Input {
     this.pressed = new Set();
     this.mouseX = 0;
     this.mouseY = 0;
+    this.wheel = 0;
     this.dragging = false;
     this.listeners = { lockchange: [], keydown: [] };
 
@@ -36,6 +37,8 @@ export class Input {
       this.mouseX += e.movementX;
       this.mouseY += e.movementY;
     });
+
+    window.addEventListener('wheel', (e) => { this.wheel += Math.sign(e.deltaY); }, { passive: true });
 
     document.addEventListener('pointerlockchange', () => {
       this.consumeMouse();
@@ -85,6 +88,13 @@ export class Input {
     this.mouseX = 0;
     this.mouseY = 0;
     return delta;
+  }
+
+  // Pasos de rueda acumulados desde la última llamada (+ abajo, - arriba).
+  consumeWheel() {
+    const steps = this.wheel;
+    this.wheel = 0;
+    return steps;
   }
 
   // Llamar al final de cada frame.

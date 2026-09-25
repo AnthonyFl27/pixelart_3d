@@ -7,6 +7,8 @@ const CONTROLS = [
   ['Espacio', 'Saltar / subir'],
   ['C / Ctrl', 'Bajar (vuelo)'],
   ['F', 'Modo vuelo'],
+  ['1 - 5 / Rueda', 'Inventario'],
+  ['Q', 'Guardar objeto'],
   ['M', 'Silenciar audio'],
   ['T (mantener)', 'Acelerar el tiempo'],
   ['F3', 'Depuración'],
