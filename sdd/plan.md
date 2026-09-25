@@ -207,30 +207,52 @@ aparatos y objetos; el audio avanzado (acústica y radio) va al final porque se 
   encendido/apagado, luz fría y sonidos (clic, zumbido, estática) con posición en el espacio.
 **Verificación:** encender desde el sofá y apagar; comprobar la luz en la sala de noche. (RF-390…RF-394, RV-307)
 
-## Fase 21 — Objetos recogibles: escopeta y farol
+## Fase 21 — Objetos recogibles, pilas y munición
 - `src/interaction/pickup.js`: objetos del mundo que se retiran y pasan a la primera ranura libre.
-- `inventory.js`: `addItem`, aviso de inventario lleno; `ITEMS` con escopeta y farol.
-- `src/items/shotgun.js` y `src/items/lantern.js`: iconos 16×16 y modelos en primera persona con balanceo y sacar/guardar.
+- `inventory.js`: `addItem`, pilas (`stackable`, máximo por pila), aviso de inventario lleno; `ITEMS` con escopeta, cartuchos y farol.
+- `hotbar.js`: cantidad de la pila sobre el icono en cifras pixel.
+- Cajas de cartuchos como datos en `cabinLayout.js`; recogida parcial si se supera el límite de 20 (pila + cañones).
+- `src/items/shotgun.js` (modelo, icono, sacar/guardar) y `src/items/lantern.js`: iconos 16×16 y modelos en primera persona.
 - `src/items/handLight.js`: la luz de la antorcha pasa a ser la luz de mano compartida.
-**Verificación:** coger ambos objetos, cambiar de ranura, ver el farol iluminar de noche. (RF-400…RF-405, RV-308)
+**Verificación:** coger la escopeta, el farol y las cajas; comprobar el límite de 20 y la recogida parcial. (RF-400…RF-406, RF-460…RF-465, RV-308, RV-310)
 
-## Fase 22 — Acústica de zonas y pasos nuevos
+## Fase 22 — Escopeta: disparo y recarga
+- Máquina de estados de la escopeta y estado por cañón (`loaded | spent | empty`), conservado al guardarla.
+- Disparo con clic izquierdo: retroceso, sacudida de cámara, fogonazo por fotogramas, luz de fogonazo, humo.
+- `src/combat/ballistics.js`: perdigones con dispersión y alcance; superficie alcanzada (terreno, piedra, madera, agua).
+- `src/combat/impacts.js`: polvo, esquirlas, astillas, salpicaduras, marcas recicladas y vainas expulsadas.
+- Recarga con `R`: abrir, expulsar vainas, insertar 1–2 cartuchos, cerrar; cancelable al cambiar de ranura.
+- `src/audio/gunshot.js`: estampido con eco exterior (retardos filtrados) o reverb interior, compresor; sonidos de recarga y clic en seco.
+- `src/ui/ammo.js`: dos iconos de cartucho y reserva; avisos `[R] Recargar` y `Sin munición`.
+- Pájaros cercanos que huyen al oír el disparo.
+**Verificación:** disparar sin munición (clic), recargar con 1 y con 2 cartuchos, disparar dentro y fuera, impactos en cada superficie. (RF-440…RF-453, RV-311, RNF-308)
+
+## Fase 23 — Acústica de zonas y pasos nuevos
 - `src/audio/acoustics.js`: bus interior con convolución (IR procedural), amortiguación del exterior según zona y puerta.
 - `footsteps.js`: perfiles de madera (crujido aleatorio), agua, barro y grava; superficie desde el colisionador.
 - Efectos de sentarse, recoger y lámpara en `sfx.js`.
 **Verificación:** caminar por el porche, el interior, el agua, el barro y la grava; entrar y salir con la puerta abierta y cerrada. (RF-420…RF-424)
 
-## Fase 23 — Radio con música
-- `src/interaction/radio.js`: estados (apagada, sintonizando, cargando, sonando, sin archivo), dial iluminado.
-- `src/audio/radioChain.js`: `AudioBufferSourceNode` en bucle → EQ de radio → saturación (`WaveShaperNode`) →
-  crepitado → `PannerNode` en la radio → seco + envío a reverb (`ConvolverNode`) y eco (`DelayNode` con realimentación
-  filtrada) → bus que pasa por la amortiguación de zona de `acoustics.js`.
-- Carga diferida del `.mp3` (`fetch` + `decodeAudioData`) al primer encendido; fallback a estática sin errores.
-**Verificación:** encender, escuchar dentro, en el porche y a 30 m; pausa y silencio; probar sin el archivo. (RF-410…RF-418)
+## Fase 24 — Radio con música
+- Copiar la canción a `assets/audio/radio.mp3` (ruta en `config.js`).
+- `src/interaction/radio.js`: estados `off → tuning → playing`, dial iluminado, posición conservada al apagar.
+- Estática de sintonización procedural (≈ 3 s): ruido filtrado con barrido de banda, silbidos heterodinos y chasquidos;
+  fundido cruzado hacia la canción y crepitado leve residual.
+- `src/audio/radioChain.js`: `<audio loop>` → `MediaElementAudioSourceNode` → EQ de radio → saturación (`WaveShaperNode`) →
+  `PannerNode` en la radio → seco (bajo) + envío a reverb (`ConvolverNode`) y eco (`DelayNode` con realimentación
+  filtrada) con mezcla mayoritariamente húmeda → bus que pasa por la amortiguación de zona de `acoustics.js`.
+- Fallback a estática si el archivo falla, sin errores en consola.
+**Verificación:** encender (estática → canción), escuchar dentro, en el porche y a 30 m; apagar y encender (continúa); pausa y silencio; probar sin el archivo. (RF-410…RF-419, RNF-309)
 
-## Fase 24 — Pulido y validación v3
+## Fase 25 — Pájaros: día, aire libre y volumen
+- Bajar `chirpVolume` a la mitad.
+- De noche, ningún pájaro visible (también los posados) ni trinos; al anochecer se van todos.
+- Trinos silenciados dentro de la cabaña con fundido al entrar y salir; indicador en el HUD.
+**Verificación:** con `T`, pasar del día a la noche fuera; entrar y salir de la cabaña de día. (RF-470…RF-473)
+
+## Fase 26 — Pulido y validación v3
 - Ajuste visual del agua, la madera y el interior a baja resolución; colores por fase del día.
-- Rendimiento: draw calls, triángulos, ocultación del interior (RNF-301, RNF-302).
+- Rendimiento: draw calls, triángulos, ocultación del interior, partículas (RNF-301, RNF-302, RNF-308).
 - HUD con los campos nuevos y puntos de prueba en `AGENTS.md`; actualizar `README.md`.
 - Criterios de aceptación de la spec v3.
 
@@ -244,6 +266,8 @@ aparatos y objetos; el audio avanzado (acústica y radio) va al final porque se 
 | Muchas luces encarecen los shaders | Número de luces fijo, sin sombras, intensidad 0 al apagar; luz de mano compartida. |
 | Recompilación de shaders al encender aparatos | Todas las luces y uniforms creados al cargar. |
 | Política de autoplay del navegador | El `AudioContext` ya se reanuda con el clic de inicio; la radio solo suena tras `E`. |
-| Tamaño o formato del `.mp3` | Carga diferida, tamaño recomendado ≤ 10 MB, fallback a estática. |
+| Memoria del `.mp3` (≈ 85 MB decodificado) | Streaming con `<audio>` + `MediaElementAudioSourceNode`; fallback a estática. |
+| Estampido del disparo que satura la mezcla | Compresor/limitador en el bus del disparo y ganancia moderada. |
+| Coste de rayos y partículas por disparo | 8 rayos contra colisionadores y terreno; partículas instanciadas y recicladas. |
 | Colisión con la puerta en movimiento | Colisionador desactivado durante la animación y cierre bloqueado si el jugador ocupa el recorrido. |
 | Sonido del agua repetitivo | Capas con modulación lenta aleatoria y gotas en instantes aleatorios. |

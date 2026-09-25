@@ -86,39 +86,72 @@ Leyenda: `[ ]` pendiente · `[x]` completada · `[~]` en progreso
 - [ ] Luz fría de la pantalla (siempre presente, intensidad 0 apagada)
 - [ ] Sonidos: clic, zumbido de tubo y estática con posición en el espacio
 
-## Fase 21 — Objetos recogibles: escopeta y farol
+## Fase 21 — Objetos recogibles, pilas y munición
 - [ ] `pickup.js`: objetos del mundo que pasan a la primera ranura libre
-- [ ] `inventory.js`: `addItem` y aviso `Inventario lleno`
-- [ ] Escopeta en el soporte sobre la chimenea; soporte vacío al cogerla
+- [ ] `inventory.js`: `addItem`, aviso `Inventario lleno`
+- [ ] Objetos apilables (`stackable`) con máximo por pila
+- [ ] `hotbar.js`: cantidad de la pila sobre el icono en cifras pixel
+- [ ] Escopeta descargada en el soporte sobre la chimenea; soporte vacío al cogerla
 - [ ] `shotgun.js`: icono 16×16 y modelo en primera persona con balanceo y sacar/guardar
+- [ ] Objeto `Cartuchos` apilable (máximo 20) con icono de cartucho rojo y latón
+- [ ] Cajas de 4 cartuchos en la mesa de la cocina, la mesa baja y el aparador de la radio (datos en `cabinLayout.js`)
+- [ ] Límite de 20 entre pila y cañones; recogida parcial y aviso `Munición al máximo`
+- [ ] Las cajas no reaparecen; la ranura de cartuchos se libera al gastar el último
+- [ ] La ranura de cartuchos no se equipa (mano vacía + nombre y cantidad)
 - [ ] Farol de aceite colgado junto a la mesa de la cocina
 - [ ] `lantern.js`: icono 16×16 y modelo en primera persona
 - [ ] `handLight.js`: luz de mano compartida por antorcha y farol
-- [ ] Sonido al recoger objetos
+- [ ] Sonidos al recoger objetos y traqueteo de cartuchos
 
-## Fase 22 — Acústica de zonas y pasos nuevos
+## Fase 22 — Escopeta: disparo y recarga
+- [ ] Máquina de estados de la escopeta y estado por cañón (`loaded`, `spent`, `empty`), conservado al guardarla
+- [ ] Disparo con clic izquierdo, primero el cañón derecho y luego el izquierdo
+- [ ] Clic en seco sin cartucho; avisos `[R] Recargar` y `Sin munición`
+- [ ] Animación de retroceso y sacudida de cámara
+- [ ] Fogonazo pixel art por fotogramas y luz de fogonazo (siempre presente, intensidad 0 en reposo)
+- [ ] Humo pixel desde la boca del cañón
+- [ ] `ballistics.js`: 8 perdigones con dispersión ≈ 4° y alcance ≈ 40 m contra terreno, colisionadores y agua
+- [ ] `impacts.js`: polvo, esquirlas, astillas, salpicaduras y marcas de agujero recicladas
+- [ ] Recarga con `R`: abrir, expulsar vainas, insertar 1–2 cartuchos uno a uno, cerrar
+- [ ] Vainas expulsadas que caen al suelo y desaparecen
+- [ ] Cancelar la recarga al cambiar de ranura; no disparar al recargar, sacar/guardar o sentado
+- [ ] `gunshot.js`: estampido con eco exterior y reverb interior, con compresor
+- [ ] Sonidos de apertura, expulsión, inserción, cierre y clic en seco
+- [ ] `ui/ammo.js`: dos iconos de cartucho y reserva `×N` junto a la barra
+- [ ] Pájaros cercanos que huyen al disparar
+
+## Fase 23 — Acústica de zonas y pasos nuevos
 - [ ] `audio/acoustics.js`: detección de zona interior y estado de la puerta
 - [ ] Reverberación de habitación con respuesta al impulso procedural
-- [ ] Amortiguación del viento, los pájaros y el agua dentro de la cabaña
+- [ ] Amortiguación del viento y el agua dentro de la cabaña
 - [ ] Pasos de madera con crujido ocasional
 - [ ] Pasos en agua (chapoteo), barro y grava
 - [ ] Efectos de sentarse, levantarse y lámpara
 
-## Fase 23 — Radio con música
+## Fase 24 — Radio con música
+- [x] Colocar la canción en `assets/audio/radio.mp3` (local, excluida en `.gitignore`)
+- [ ] Ruta del archivo en `config.js`
 - [ ] Modelo de radio de válvulas con dial iluminado
-- [ ] `radio.js`: estados apagada, sintonizando, cargando, sonando y sin archivo
-- [ ] Carga diferida del `.mp3` desde `assets/audio/` (ruta en `config.js`) y reproducción en bucle
-- [ ] `radioChain.js`: EQ de radio antigua, saturación suave y crepitado
-- [ ] Reverberación (convolución) y eco con retardo y realimentación filtrada
+- [ ] `radio.js`: estados `off`, `tuning`, `playing` y sin archivo
+- [ ] Estática de sintonización procedural de ≈ 3 s (barridos, silbidos, chasquidos) al encender
+- [ ] Fundido cruzado de la estática a la canción y crepitado leve de fondo
+- [ ] Reproducción en bucle por streaming (`<audio>` + `MediaElementAudioSourceNode`)
+- [ ] `radioChain.js`: EQ de radio antigua y saturación suave
+- [ ] Reverberación (convolución, cola 1,5–2,5 s) y eco (≈ 280 ms) con mezcla mayoritariamente húmeda: música de fondo
 - [ ] Sonido espacial con `PannerNode` en la radio
 - [ ] Música amortiguada fuera de la cabaña según la puerta
-- [ ] Estática de sintonización al encender y fundido de entrada
+- [ ] Apagar con clic y fundido; al encender de nuevo, estática y la canción continúa donde se quedó
 - [ ] Respeta pausa (`Esc`) y silencio (`M`)
 - [ ] Fallback a estática sin archivo, sin errores en la consola
-- [ ] Añadir `assets/audio/radio.mp3` (lo proporciona el equipo)
 
-## Fase 24 — Pulido y validación v3
-- [ ] HUD `F3`: zona, superficie, distancia y volumen del agua, objeto apuntado y estado de la radio
+## Fase 25 — Pájaros: día, aire libre y volumen
+- [ ] Bajar el volumen de los trinos a la mitad (`config.js`)
+- [ ] De noche ningún pájaro visible (también los posados) ni trinos
+- [ ] Trinos silenciados dentro de la cabaña con fundido al entrar y salir
+- [ ] Indicador de audio de pájaros en el HUD
+
+## Fase 26 — Pulido y validación v3
+- [ ] HUD `F3`: zona, superficie, distancia y volumen del agua, objeto apuntado, estado de la radio, munición y pájaros
 - [ ] Ajustar colores del agua, la madera y el interior por fase del día
 - [ ] Verificar rendimiento: ≤ 40 draw calls y ≤ 300k triángulos por frame
 - [ ] Medir 60 FPS en hardware real
