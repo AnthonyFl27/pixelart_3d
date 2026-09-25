@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { CONFIG } from '../config.js';
 import { createRandom, deriveSeed, ValueNoise2D } from '../core/noise.js';
+import { ViewModel, createStripeTexture } from './viewModel.js';
 
 // Icono 16x16 para la barra de inventario.
 export const TORCH_ICON = {
@@ -28,24 +29,19 @@ export const TORCH_ICON = {
   ],
 };
 
-// Antorcha en primera persona. Se dibuja en una escena propia (capa superpuesta)
-// para no atravesar paredes; su luz (`light`) vive en la escena del mundo.
-export class Torch {
+// Antorcha en primera persona: llama por fotogramas y chispas. Su luz en el mundo es la
+// luz de mano compartida (handLight.js) con el perfil `CONFIG.torch.light`.
+export class Torch extends ViewModel {
   constructor() {
     const t = CONFIG.torch;
+    super(t);
     this.random = createRandom(deriveSeed(CONFIG.seed, 'torch'));
+    this.lightConfig = t.light;
 
-    // Escena y cámara de la vista en primera persona.
-    this.scene = new THREE.Scene();
-    this.camera = new THREE.PerspectiveCamera(t.viewFov, 1, 0.01, 10);
-    this.ambient = new THREE.AmbientLight(0xffffff, 1);
-    this.scene.add(this.ambient);
-    this.handLight = new THREE.PointLight(t.lightColor, 0, 1.5, 1);
+    // Luz de la vista: ilumina el propio modelo.
+    this.handLight = new THREE.PointLight(t.light.color, 0, 1.5, 1);
     this.scene.add(this.handLight);
 
-    this.model = new THREE.Group();
-    this.model.scale.setScalar(t.viewScale);
-    this.scene.add(this.model);
     const handle = new THREE.Mesh(
       new THREE.BoxGeometry(0.045, 0.42, 0.045).translate(0, -0.21, 0),
       new THREE.MeshLambertMaterial({ map: createStripeTexture(['#8a5a32', '#6b4424', '#7a4e2c', '#5a3a1e']) }),
@@ -93,70 +89,25 @@ export class Torch {
     this.model.add(this.sparkPoints);
     this.sparkColors = [new THREE.Color(0xfff2b0), new THREE.Color(0xf07b1d), new THREE.Color(0x3a1a10)];
 
-    // Luz en el mundo: siempre presente (intensidad 0 al guardar) para no recompilar shaders.
-    this.light = new THREE.PointLight(t.lightColor, 0, t.lightDistance, t.lightDecay);
-    this.light.name = 'torch-light';
-
-    this.equip = 0;        // 0 = guardada, 1 = en la mano
-    this.bobPhase = 0;
     this.elapsed = 0;
-    this.lastYaw = null;
-    this.sway = 0;
     this.offset = new THREE.Vector3();
     this.tmpColor = new THREE.Color();
   }
 
-  get visible() {
-    return this.equip > 0.001;
+  // Nivel de la luz de mano (0 guardada, 1 en la mano).
+  get lightLevel() {
+    return this.eased;
   }
 
-  setAspect(aspect) {
-    this.camera.aspect = aspect;
-    this.camera.updateProjectionMatrix();
-  }
-
-  // active: si la antorcha está seleccionada. player: controlador. day: estado del ciclo.
-  update(dt, { active, player, camera, day }) {
+  // context: { active, player, day }.
+  update(dt, context) {
     const t = CONFIG.torch;
     this.elapsed += dt;
-    this.equip = THREE.MathUtils.clamp(this.equip + (active ? dt : -dt) * t.equipSpeed, 0, 1);
-    const eased = this.equip * this.equip * (3 - 2 * this.equip);
-    this.model.visible = this.visible;
+    if (!super.update(dt, context)) return;
 
-    // Parpadeo compartido por la luz del mundo y la de la mano.
     const e = this.elapsed;
-    const flicker = 1 + t.flicker * (0.55 * Math.sin(e * 13.7) + 0.3 * Math.sin(e * 23.1 + 1.3) + 0.3 * (this.random() - 0.5));
-    this.light.intensity = t.lightIntensity * flicker * eased;
-    this.handLight.intensity = t.handLightIntensity * flicker * eased;
-
-    // Posición de la luz: a la altura de la llama, delante-derecha de la cámara.
-    this.offset.set(t.lightOffset.x, t.lightOffset.y, t.lightOffset.z).applyQuaternion(camera.quaternion);
-    this.light.position.copy(camera.position).add(this.offset);
-    this.light.position.x += Math.sin(e * 9.1) * t.lightJitter;
-    this.light.position.y += Math.sin(e * 11.3 + 2) * t.lightJitter;
-
-    if (!this.visible) return;
-
-    // Luz ambiente de la vista = ambiente del mundo.
-    this.ambient.color.copy(day.ambientSky).lerp(day.lightColor, 0.3);
-    this.ambient.intensity = day.ambientIntensity * 0.9 + day.lightIntensity * 0.25;
-
-    // Balanceo al caminar y retardo al girar.
-    const speed = player.flying ? 0 : player.horizontalSpeed;
-    const moving = Math.min(speed / CONFIG.player.walkSpeed, 1.5);
-    this.bobPhase += dt * speed * t.bobFrequency;
-    if (this.lastYaw === null) this.lastYaw = player.yaw;
-    const yawDelta = THREE.MathUtils.clamp(player.yaw - this.lastYaw, -0.2, 0.2);
-    this.lastYaw = player.yaw;
-    this.sway += (yawDelta * t.swayAmount - this.sway) * Math.min(1, dt * 10);
-
-    const base = t.viewPosition;
-    this.model.position.set(
-      base.x + Math.sin(this.bobPhase) * t.bobAmount * moving + this.sway,
-      base.y - Math.abs(Math.cos(this.bobPhase)) * t.bobAmount * 1.4 * moving - (1 - eased) * 0.5,
-      base.z,
-    );
-    this.model.rotation.set(t.viewRotation.x, t.viewRotation.y, t.viewRotation.z + this.sway * 2);
+    const flicker = 1 + t.light.flicker * (0.55 * Math.sin(e * 13.7) + 0.3 * Math.sin(e * 23.1 + 1.3) + 0.3 * (this.random() - 0.5));
+    this.handLight.intensity = t.handLightIntensity * flicker * this.eased;
     // La llama siempre vertical y de cara a la cámara.
     this.flame.rotation.set(-t.viewRotation.x, 0, -t.viewRotation.z - this.sway * 2);
     const h = t.handLightOffset;
@@ -200,27 +151,7 @@ export class Torch {
   }
 }
 
-// --- Texturas ----------------------------------------------------------------
-
-function createStripeTexture(colors) {
-  const canvas = document.createElement('canvas');
-  canvas.width = 4;
-  canvas.height = 16;
-  const ctx = canvas.getContext('2d');
-  const random = createRandom(deriveSeed(CONFIG.seed, colors.join('')));
-  for (let y = 0; y < 16; y++) {
-    for (let x = 0; x < 4; x++) {
-      ctx.fillStyle = colors[Math.floor(random() * colors.length)];
-      ctx.fillRect(x, y, 1, 1);
-    }
-  }
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.magFilter = THREE.NearestFilter;
-  texture.minFilter = THREE.NearestFilter;
-  texture.generateMipmaps = false;
-  return texture;
-}
+// --- Llama ---------------------------------------------------------------------
 
 const FLAME_W = 16;
 const FLAME_H = 24;

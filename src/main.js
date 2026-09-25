@@ -24,6 +24,9 @@ import { Prompt } from './ui/prompt.js';
 import { Interaction } from './interaction/interaction.js';
 import { Inventory } from './items/inventory.js';
 import { Torch } from './items/torch.js';
+import { Shotgun } from './items/shotgun.js';
+import { Lantern } from './items/lantern.js';
+import { HandLight } from './items/handLight.js';
 import { AmbientAudio } from './audio/ambient.js';
 import { Birds } from './fauna/birds.js';
 import { MEADOW } from './levels/meadow.js';
@@ -94,9 +97,14 @@ interiors.track(interaction.items);
 let indoor = 0;
 
 const inventory = new Inventory();
+// Objetos en primera persona por id de ITEMS; la antorcha y el farol comparten la luz de mano.
 const torch = new Torch();
-scene.add(torch.light);
-pipeline.addOverlay(torch);
+const shotgun = new Shotgun();
+const lantern = new Lantern();
+const viewModels = { torch, shotgun, lantern };
+for (const viewModel of Object.values(viewModels)) pipeline.addOverlay(viewModel);
+const handLight = new HandLight();
+scene.add(handLight.light);
 
 const ui = document.getElementById('ui');
 const hud = new Hud(ui, CONFIG.debug.showHud);
@@ -152,7 +160,7 @@ const loop = new GameLoop(renderer, {
     if (state === 'playing') {
       player.update(dt, input);
       inventory.update(input);
-      prompt.show(interaction.update(dt, input, { player, audio }));
+      prompt.show(interaction.update(dt, input, { player, audio, inventory }));
       dayCycle.update(dt * (input.isDown('KeyT') ? CONFIG.dayCycle.fastForward : 1));
     } else {
       input.consumeMouse();
@@ -169,7 +177,14 @@ const loop = new GameLoop(renderer, {
     interiorLighting.update(day);
     interiors.update(player.position);
     scene.fog.color.copy(day.horizon);
-    torch.update(dt, { active: inventory.activeItem?.id === 'torch', player, camera, day });
+    // El objeto seleccionado sale cuando el anterior ya se ha guardado.
+    inventory.setExternal('shells', shotgun.loadedCount);
+    const equipped = inventory.equippedItem?.id;
+    const holstering = Object.entries(viewModels).some(([id, viewModel]) => id !== equipped && viewModel.visible);
+    for (const [id, viewModel] of Object.entries(viewModels)) {
+      viewModel.update(dt, { active: id === equipped && !holstering, player, day });
+    }
+    handLight.update(dt, camera, [torch, lantern]);
     streamWater?.update(dt, day);
     audio.updateListener(camera);
     audio.updateWater(dt, player.position, terrain.stream);
@@ -185,7 +200,7 @@ const loop = new GameLoop(renderer, {
       birds: `${birds.visibleCount} (${birds.perchedCount} posados)`,
       surface: player.surface,
       zone: zone?.name ?? 'exterior',
-      target: interaction.target ? `${interaction.target.name} (${interaction.target.prompt()})` : '-',
+      target: interaction.target ? `${interaction.target.name} (${interaction.promptText})` : '-',
       water: audio.water ? `${audio.water.distance.toFixed(1)} m vol ${audio.water.volume.toFixed(2)}` : '-',
     });
     input.endFrame();

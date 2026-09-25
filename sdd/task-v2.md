@@ -87,21 +87,21 @@ Leyenda: `[ ]` pendiente · `[x]` completada · `[~]` en progreso
 - [x] Sonidos: clic, zumbido de tubo y estática con posición en el espacio
 
 ## Fase 21 — Objetos recogibles, pilas y munición
-- [ ] `pickup.js`: objetos del mundo que pasan a la primera ranura libre
-- [ ] `inventory.js`: `addItem`, aviso `Inventario lleno`
-- [ ] Objetos apilables (`stackable`) con máximo por pila
-- [ ] `hotbar.js`: cantidad de la pila sobre el icono en cifras pixel
-- [ ] Escopeta descargada en el soporte sobre la chimenea; soporte vacío al cogerla
-- [ ] `shotgun.js`: icono 16×16 y modelo en primera persona con balanceo y sacar/guardar
-- [ ] Objeto `Cartuchos` apilable (máximo 20) con icono de cartucho rojo y latón
-- [ ] Cajas de 4 cartuchos en la mesa de la cocina, la mesa baja y el aparador de la radio (datos en `cabinLayout.js`)
-- [ ] Límite de 20 entre pila y cañones; recogida parcial y aviso `Munición al máximo`
-- [ ] Las cajas no reaparecen; la ranura de cartuchos se libera al gastar el último
-- [ ] La ranura de cartuchos no se equipa (mano vacía + nombre y cantidad)
-- [ ] Farol de aceite colgado junto a la mesa de la cocina
-- [ ] `lantern.js`: icono 16×16 y modelo en primera persona
-- [ ] `handLight.js`: luz de mano compartida por antorcha y farol
-- [ ] Sonidos al recoger objetos y traqueteo de cartuchos
+- [x] `pickup.js`: objetos del mundo que pasan a la primera ranura libre
+- [x] `inventory.js`: `addItem`, aviso `Inventario lleno`
+- [x] Objetos apilables (`stackable`) con máximo por pila
+- [x] `hotbar.js`: cantidad de la pila sobre el icono en cifras pixel
+- [x] Escopeta descargada en el soporte sobre la chimenea; soporte vacío al cogerla
+- [x] `shotgun.js`: icono 16×16 y modelo en primera persona con balanceo y sacar/guardar
+- [x] Objeto `Cartuchos` apilable (máximo 20) con icono de cartucho rojo y latón
+- [x] Cajas de 4 cartuchos en la mesa de la cocina, la mesa baja y el aparador de la radio (datos en `cabinLayout.js`)
+- [x] Límite de 20 entre pila y cañones; recogida parcial y aviso `Munición al máximo`
+- [x] Las cajas no reaparecen; la ranura de cartuchos se libera al gastar el último
+- [x] La ranura de cartuchos no se equipa (mano vacía + nombre y cantidad)
+- [x] Farol de aceite colgado junto a la mesa de la cocina
+- [x] `lantern.js`: icono 16×16 y modelo en primera persona
+- [x] `handLight.js`: luz de mano compartida por antorcha y farol
+- [x] Sonidos al recoger objetos y traqueteo de cartuchos
 
 ## Fase 22 — Escopeta: disparo y recarga
 - [ ] Máquina de estados de la escopeta y estado por cañón (`loaded`, `spent`, `empty`), conservado al guardarla

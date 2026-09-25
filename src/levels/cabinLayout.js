@@ -4,7 +4,8 @@
 // mueble (+Z local): 0 → +Z, π → -Z, π/2 → +X, -π/2 → -X. Los muebles de pared tienen el
 // origen en la superficie de la pared (ver furniture.js). `y` eleva el mueble (p. ej. sobre
 // una mesa); cuadros y sartenes cuelgan a `hang`. Los interactivos (asientos,
-// lámpara, televisor) los declaran los propios muebles.
+// lámpara, televisor, objetos recogibles) los declaran los propios muebles. Las cajas de
+// cartuchos (`shellBox`, `count` cartuchos) son todo el suministro de munición: no reaparecen.
 
 const WALL = { back: -3.42, front: 3.42, left: -4.42, right: 4.42 };
 const PARTITION = 1.5;
@@ -30,16 +31,20 @@ export const CABIN_LAYOUT = {
   furniture: [
     // --- Sala ---
     { type: 'fireplace', x: WALL.left, z: 0, rotationY: HALF_PI, top: 2.8 },
+    { type: 'gunRack', x: WALL.left + 0.4, y: 1.75, z: 0, rotationY: HALF_PI, name: 'shotgun' },
     { type: 'logs', x: -4.05, z: 1.25, rotationY: 0.3 },
     { type: 'rug', x: -2.35, z: -0.3, width: 2.2, depth: 2.3 },
     { type: 'sofa', x: -2.5, z: 1.3, rotationY: Math.PI, width: 2, seats: 3, color: 0x6e4034 },
     { type: 'armchair', x: -0.7, z: -1.3, rotationY: -2.04, color: 0x3e5a44 },
     { type: 'coffeeTable', x: -2.4, z: -0.35 },
     { type: 'oilLamp', x: -2.65, y: 0.42, z: -0.3, name: 'lamp' },
+    { type: 'shellBox', x: -2.05, y: 0.42, z: -0.45, rotationY: -0.2, count: 4, name: 'shells-sala' },
     { type: 'cabinet', x: -3.35, z: WALL.back, width: 1.1, depth: 0.5, height: 0.55 },
     { type: 'television', x: -3.35, y: 0.56, z: WALL.back + 0.3, name: 'television' },
     { type: 'bookshelf', x: PARTITION - 0.05, z: -2.6, rotationY: -HALF_PI },
+    // Aparador de la radio.
     { type: 'cabinet', x: PARTITION - 0.05, z: 2.2, rotationY: -HALF_PI, width: 1.2, depth: 0.45, height: 0.85, drawers: 3, color: 0x7a5234 },
+    { type: 'shellBox', x: PARTITION - 0.28, y: 0.86, z: 2.6, rotationY: -HALF_PI, count: 4, name: 'shells-aparador' },
     { type: 'picture', x: -0.3, z: WALL.back, hang: 1.55, width: 0.5, height: 0.4 },
     { type: 'picture', x: 0.6, z: WALL.back, hang: 1.7, width: 0.36, height: 0.46, colors: [0xc8b08a, 0x8a5a3a, 0x5a4a3a] },
     { type: 'picture', x: -1.65, z: WALL.front, hang: 1.6, rotationY: Math.PI, width: 0.42, height: 0.52, frame: 0x8a6a3a, colors: [0xa8c0d0, 0x6a8a5a, 0x4a6a3a] },
@@ -56,5 +61,7 @@ export const CABIN_LAYOUT = {
     { type: 'table', x: 3, z: 1.1, width: 1.1, depth: 0.75 },
     { type: 'chair', x: 3, z: 0.45, rotationY: 0 },
     { type: 'chair', x: 3, z: 1.78, rotationY: Math.PI, color: 0x7a5232 },
+    { type: 'shellBox', x: 3.25, y: 0.76, z: 1, rotationY: 0.3, count: 4, name: 'shells-cocina' },
+    { type: 'lanternHook', x: WALL.right, z: 1.95, rotationY: -HALF_PI, hang: 1.5, name: 'lantern' },
   ],
 };

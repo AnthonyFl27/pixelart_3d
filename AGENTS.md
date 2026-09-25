@@ -77,14 +77,19 @@ pixelart_3d/
 │   │   ├── controller.js       # Primera persona: andar, correr, saltar, volar
 │   │   └── collision.js        # Cajas orientadas, suelo y techo
 │   ├── items/
-│   │   ├── inventory.js        # Ranuras, selección y catálogo de objetos
-│   │   └── torch.js            # Antorcha en primera persona: llama, chispas y luz
+│   │   ├── inventory.js        # Ranuras con pilas, addItem, límites y catálogo de objetos
+│   │   ├── viewModel.js        # Base de los objetos en primera persona: sacar/guardar y balanceo
+│   │   ├── handLight.js        # Luz de mano compartida por antorcha y farol
+│   │   ├── torch.js            # Antorcha en primera persona: llama y chispas
+│   │   ├── shotgun.js          # Escopeta de doble cañón: iconos (escopeta, cartuchos) y modelo
+│   │   └── lantern.js          # Farol de aceite: icono y modelo que se balancea
 │   ├── interaction/
 │   │   ├── interaction.js      # Rayo desde la cámara, objeto apuntado, tecla E y tipos interactivos
 │   │   ├── door.js             # Puerta con bisagra, animación, colisión que gira y bloqueo
 │   │   ├── seat.js             # Asientos: sentarse y levantarse
 │   │   ├── lamp.js             # Lámpara de aceite
 │   │   ├── television.js       # Televisor CRT: NO SIGNAL, encendido/apagado, luz y sonido
+│   │   ├── pickup.js           # Objetos recogibles (escopeta, cartuchos, farol) y sus modelos
 │   │   └── hitBox.js           # Caja invisible de apuntado
 │   ├── fauna/birds.js          # Pájaros: bandadas, posado, actividad según la hora
 │   ├── levels/meadow.js        # Nivel como datos (spawn, caminos, relieve, estructuras)
@@ -94,7 +99,7 @@ pixelart_3d/
 │       ├── ambient.js          # Viento, trinos y bus maestro (Web Audio)
 │       ├── footsteps.js        # Pasos por superficie (césped, tierra, piedra)
 │       ├── water.js            # Sonido procedural del riachuelo según distancia y dirección
-│       └── sfx.js              # Efectos con posición: bisagra, golpe y pestillo, clic, tubo de la tele
+│       └── sfx.js              # Efectos con posición: bisagra, golpe y pestillo, clic, tubo de la tele, recoger
 ├── sdd/                        # Spec-Driven Development
 │   ├── specs/spec_v1.md        # Especificación del prototipo
 │   ├── specs/spec_v2.md        # Mundo vivo: día/noche, antorcha, fauna y entorno
@@ -126,8 +131,13 @@ pixelart_3d/
   (objeto con `meshes`, `prompt()`, `interact()` y opcionalmente `object`, `collider` y `update()`) y
   declararlo como dato: las estructuras devuelven `interactables: [{ type, position, rotationY, … }]`.
   Las puertas de la cabaña están en `CONFIG.cabin.doors`.
-- **Nuevo objeto de inventario:** añadirlo a `ITEMS` en `src/items/inventory.js` (con icono 16x16)
-  y su comportamiento en `main.js` según `inventory.activeItem`.
+- **Nuevo objeto de inventario:** añadirlo a `ITEMS` en `src/items/inventory.js` (con icono 16x16;
+  `stackable`/`maxStack` para pilas, `limit` para un máximo total, `equippable: false` si no se lleva en
+  la mano) y, si se ve en primera persona, una clase que extienda `ViewModel` registrada en `viewModels`
+  de `main.js`. Los objetos con luz exponen `lightConfig` y `lightLevel` para la luz de mano.
+- **Objeto recogible en el mundo:** un mueble declara `f.interactable({ type: 'pickup', item, count, model })`
+  (ver `gunRack`, `shellBox` y `lanternHook` en `furniture.js`); el modelo va en `PICKUP_MODELS` de
+  `src/interaction/pickup.js`. Las cajas de cartuchos son datos de `CABIN_LAYOUT`.
 - **Hora del día:** keyframes de color y luz en `CONFIG.dayCycle.keyframes`; duración en `dayLength`.
 - **Relieve:** añadir entradas a `terrainFeatures` en el nivel (`hollow`, `mound`, `ridge`, `gully`, `dirtPile`,
   `dirtPatch`); nuevos tipos en `FEATURE_TYPES` de `src/world/terrainFeatures.js`.
@@ -164,10 +174,12 @@ pixelart_3d/
   (escalones de la puerta trasera de la cocina). `E` abre y cierra; no se cierran con el jugador en el recorrido.
 - Interior: `?pos=-81.2,11,3.14&hora=22` (sala de noche: lámpara en la mesa baja, sofá y televisor)
   y `?pos=-82,7.8,0` (cocina). Sentado, `E` sin objeto apuntado, `Espacio` o `WASD` levantan.
+- Recoger: `?pos=-81.2,12.9,3.14` (escopeta sobre la chimenea, mirar arriba), `?pos=-80.5,7.9,0`
+  (cartuchos en la mesa de la cocina, mirar abajo) y `?pos=-79.55,6.4,0&hora=21` (farol en la pared).
 - Mantener `T` acelera el tiempo.
 - Revisar visualmente contra la imagen/video de referencia.
 - Comprobar controles: movimiento, cámara, salto, colisión con estructuras, pausa, inventario, antorcha, puertas,
-  asientos, lámpara y televisor.
+  asientos, lámpara, televisor y objetos recogibles (límite de 20 cartuchos y recogida parcial).
 
 ## Commits
 

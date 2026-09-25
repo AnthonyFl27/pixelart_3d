@@ -200,6 +200,76 @@ export class Sfx {
     }
   }
 
+  // Recoger un objeto: 'metal' (golpe metálico de la escopeta), 'rattle' (traqueteo de
+  // cartuchos) o 'lantern' (asa que chirría y el cristal que tintinea).
+  pickup(position, { kind = 'metal' } = {}) {
+    const p = CONFIG.audio.sfx.pickup;
+    const ctx = this.ctx;
+    const now = ctx.currentTime + 0.01;
+    const output = this.spatial(position);
+
+    if (kind === 'metal') {
+      const m = p.metal;
+      this.tone('sine', m.thump * vary(0.1), m.thumpGain, now, 0.004, 0.05, output, 0.6);
+      this.burst('brown', 'lowpass', 900, 0.7, m.thumpGain * 0.6, now, 0.002, 0.03, output);
+      // Resonancia metálica: parciales inarmónicos que se apagan a ritmos distintos.
+      m.ring.forEach((frequency, i) => {
+        this.tone('triangle', frequency * vary(0.04), m.ringGain / (i + 1), now + 0.005, 0.002, m.ringDecay / (1 + i * 0.4), output);
+      });
+      this.burst('pink', 'highpass', 3000, 0.7, m.ringGain, now, 0.001, 0.01, output);
+      return;
+    }
+
+    if (kind === 'rattle') {
+      const r = p.rattle;
+      const clicks = Math.round(range(r.clicks));
+      for (let i = 0; i < clicks; i++) {
+        const time = now + Math.pow(Math.random(), 1.4) * r.duration;
+        const level = r.gain * (0.4 + Math.random() * 0.6);
+        this.burst('pink', 'bandpass', r.frequency * vary(0.35), 3, level, time, 0.001, 0.008, output);
+        this.tone('triangle', r.tick * vary(0.25), level * 0.25, time, 0.001, 0.015, output);
+      }
+      this.burst('brown', 'lowpass', 500, 0.7, r.gain * 0.5, now, 0.004, 0.04, output);
+      return;
+    }
+
+    const l = p.lantern;
+    const squeak = ctx.createOscillator();
+    squeak.type = 'sawtooth';
+    squeak.frequency.setValueAtTime(l.squeak * vary(0.1), now);
+    squeak.frequency.linearRampToValueAtTime(l.squeak * vary(0.2) * 1.2, now + 0.12);
+    const band = ctx.createBiquadFilter();
+    band.type = 'bandpass';
+    band.frequency.value = l.squeak * 2;
+    band.Q.value = 6;
+    const envelope = ctx.createGain();
+    envelope.gain.setValueAtTime(0, now);
+    envelope.gain.linearRampToValueAtTime(l.squeakGain, now + 0.02);
+    envelope.gain.linearRampToValueAtTime(0, now + 0.14);
+    squeak.connect(band).connect(envelope).connect(output);
+    squeak.start(now);
+    squeak.stop(now + 0.2);
+    for (const [delay, level] of [[0.1, 1], [0.16, 0.5]]) {
+      this.tone('sine', range(l.clink), l.clinkGain * level, now + delay, 0.001, 0.05, output);
+    }
+    this.burst('brown', 'lowpass', 600, 0.7, l.clinkGain * 0.8, now + 0.1, 0.003, 0.03, output);
+  }
+
+  // Tono con ataque y caída exponencial; `drop` baja la frecuencia durante la caída.
+  tone(type, frequency, gain, time, attack, decay, output, drop = 1) {
+    const osc = this.ctx.createOscillator();
+    osc.type = type;
+    osc.frequency.setValueAtTime(frequency, time);
+    if (drop !== 1) osc.frequency.exponentialRampToValueAtTime(frequency * drop, time + attack + decay * 3);
+    const envelope = this.ctx.createGain();
+    envelope.gain.setValueAtTime(0, time);
+    envelope.gain.linearRampToValueAtTime(gain, time + attack);
+    envelope.gain.setTargetAtTime(0, time + attack, decay);
+    osc.connect(envelope).connect(output);
+    osc.start(time);
+    osc.stop(time + attack + decay * 6);
+  }
+
   // Ráfaga de ruido filtrado con envolvente rápida.
   burst(noise, type, frequency, q, gain, time, attack, decay, output) {
     const ctx = this.ctx;

@@ -694,6 +694,12 @@ export const CONFIG = {
         fadeIn: 0.4,
         fadeOut: 0.12,
       },
+      // Recoger objetos: golpe metálico (escopeta), traqueteo de cartuchos y asa del farol.
+      pickup: {
+        metal: { thump: 110, thumpGain: 0.6, ring: [820, 1370, 2210], ringGain: 0.12, ringDecay: 0.18 },
+        rattle: { clicks: [6, 10], duration: 0.28, frequency: 2600, gain: 0.35, tick: 1900 },
+        lantern: { squeak: 1500, squeakGain: 0.08, clink: [2400, 3900], clinkGain: 0.12 },
+      },
       slam: {
         thump: 72,             // golpe grave (Hz)
         thumpGain: 0.9,
@@ -870,14 +876,33 @@ export const CONFIG = {
     startSlot: -1,         // -1 = mano vacía
   },
 
+  // Objetos recogibles (src/interaction/pickup.js) y avisos del inventario.
+  pickup: {
+    fullText: 'Inventario lleno',
+    ammoFullText: 'Munición al máximo',
+  },
+
+  // Cartuchos de la escopeta: pila del inventario y límite total entre la pila y los
+  // cartuchos cargados en los cañones (spec v3, 4.13).
+  ammo: {
+    item: 'shells',
+    maxStack: 20,
+    max: 20,
+    boxCount: 4,           // cartuchos por caja (por defecto)
+  },
+
+  // Luz de mano (src/items/handLight.js): una sola luz en el mundo, siempre presente,
+  // que toma el perfil (`light`) del objeto de luz equipado: antorcha o farol.
   torch: {
-    lightColor: 0xffa04a,
-    lightIntensity: 10,
-    lightDistance: 14,     // alcance máximo (u)
-    lightDecay: 1.3,
-    lightOffset: { x: 0.35, y: -0.1, z: -0.5 }, // posición de la llama respecto a la cámara
-    lightJitter: 0.03,     // temblor de la posición de la luz (u)
-    flicker: 0.18,         // amplitud del parpadeo (0-1)
+    light: {
+      color: 0xffa04a,
+      intensity: 10,
+      distance: 14,        // alcance máximo (u)
+      decay: 1.3,
+      offset: { x: 0.35, y: -0.1, z: -0.5 }, // posición de la llama respecto a la cámara
+      jitter: 0.03,        // temblor de la posición de la luz (u)
+      flicker: 0.18,       // amplitud del parpadeo (0-1)
+    },
     handLightIntensity: 1.6,
     handLightOffset: { x: -0.06, y: 0.1, z: 0.18 }, // respecto a la cabeza de la antorcha
     flameFrames: 8,
@@ -892,6 +917,46 @@ export const CONFIG = {
     bobFrequency: 1.5,
     bobAmount: 0.012,
     swayAmount: 0.4,
+  },
+
+  // Farol de aceite en primera persona (src/items/lantern.js): luz más cálida, estable y amplia.
+  lantern: {
+    light: {
+      color: 0xffc27a,
+      intensity: 9,
+      distance: 19,
+      decay: 1.15,
+      offset: { x: 0.3, y: -0.25, z: -0.45 },
+      jitter: 0.008,
+      flicker: 0.05,
+    },
+    handLightIntensity: 0.8,
+    flameColor: 0xffb040,
+    coreColor: 0xfff0b8,
+    globeColor: 0xffd890,
+    globeOpacity: 0.55,
+    swing: 0.9,            // balanceo del farol colgado al girar y caminar
+    equipSpeed: 4,
+    viewFov: 55,
+    viewPosition: { x: 0.3, y: -0.1, z: -0.72 },
+    viewScale: 0.75,
+    viewRotation: { x: 0, y: 0.2, z: 0 },
+    bobFrequency: 1.5,
+    bobAmount: 0.01,
+    swayAmount: 0.35,
+  },
+
+  // Escopeta de doble cañón en primera persona (src/items/shotgun.js).
+  shotgun: {
+    equipSpeed: 3.5,
+    viewFov: 55,
+    viewPosition: { x: 0.2, y: -0.17, z: -0.5 },
+    viewScale: 0.9,
+    viewRotation: { x: 0.04, y: 0.08, z: 0 },
+    bobFrequency: 1.5,
+    bobAmount: 0.01,
+    swayAmount: 0.3,
+    keyLight: 0.8,         // luz de apoyo de la vista (fracción de la luz del día)
   },
 
   debug: {

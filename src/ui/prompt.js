@@ -1,5 +1,6 @@
 // Punto de mira pixel art y aviso de interacción (`[E] Abrir puerta`) bajo él.
-// La mira se resalta cuando apunta a un objeto interactivo.
+// La mira se resalta cuando apunta a un objeto interactivo. Un aviso sin acción
+// (`{ text, notice: true }`, p. ej. `Inventario lleno`) se muestra sin la tecla.
 
 export class Prompt {
   constructor(root, key = 'E') {
@@ -17,6 +18,7 @@ export class Prompt {
 
     this.playing = false;
     this.current = null;
+    this.notice = false;
   }
 
   setPlaying(playing) {
@@ -25,16 +27,20 @@ export class Prompt {
     this.render();
   }
 
-  // text: acción a mostrar o null para ocultar el aviso.
-  show(text) {
-    if (text === this.current) return;
+  // prompt: texto de la acción, { text, notice } o null para ocultar el aviso.
+  show(prompt) {
+    const text = typeof prompt === 'string' ? prompt : prompt?.text ?? null;
+    const notice = Boolean(prompt?.notice);
+    if (text === this.current && notice === this.notice) return;
     this.current = text;
+    this.notice = notice;
     this.render();
   }
 
   render() {
     const visible = this.playing && Boolean(this.current);
     this.crosshair.classList.toggle('crosshair--active', visible);
+    this.element.classList.toggle('prompt--notice', this.notice);
     this.element.hidden = !visible;
     this.text.textContent = this.current ?? '';
   }

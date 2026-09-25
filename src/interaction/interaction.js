@@ -5,11 +5,13 @@ import { Door } from './door.js';
 import { Seat } from './seat.js';
 import { Lamp } from './lamp.js';
 import { Television } from './television.js';
+import { Pickup } from './pickup.js';
 
 // Sistema de interacción genérico. Cada objeto interactivo expone:
 //   { meshes: Object3D[] (lo que apunta el rayo), object?: Object3D (se añade a la escena),
 //     collider?: caja de colisión (se añade a los colisionadores del jugador),
-//     prompt(context) -> texto de la acción o null, interact(context), update?(dt, context) }
+//     prompt(context) -> texto de la acción, { text, notice } (aviso sin acción) o null,
+//     interact(context), update?(dt, context), removed? (true: se retira tras interactuar) }
 // Los objetos se crean a partir de datos del nivel con INTERACTABLE_TYPES: añadir un tipo
 // nuevo no requiere tocar el bucle principal.
 
@@ -18,6 +20,7 @@ export const INTERACTABLE_TYPES = {
   seat: (data) => new Seat(data),
   lamp: (data, context) => new Lamp(data, context),
   television: (data, context) => new Television(data, context),
+  pickup: (data, context) => new Pickup(data, context),
 };
 
 const SCREEN_CENTER = new THREE.Vector2(0, 0);
@@ -30,6 +33,7 @@ export class Interaction {
     this.items = [];
     this.meshes = [];
     this.target = null;
+    this.prompt = null;
     this.raycaster = new THREE.Raycaster();
   }
 
@@ -52,7 +56,16 @@ export class Interaction {
     if (item.collider) this.colliders.push(item.collider);
   }
 
-  // context: { player, audio, ... }. Devuelve el texto del aviso o null.
+  // Retira un objeto (p. ej. recogido): deja de recibir el rayo y de colisionar.
+  remove(item) {
+    this.items = this.items.filter((other) => other !== item);
+    this.meshes = this.meshes.filter((mesh) => mesh.userData.interactable !== item);
+    if (item.collider) this.colliders.splice(this.colliders.indexOf(item.collider), 1);
+    item.object?.removeFromParent();
+    if (this.target === item) this.target = null;
+  }
+
+  // context: { player, audio, inventory, ... }. Devuelve el aviso (ver Prompt.show) o null.
   // Sentado, el alcance es mayor y `E` sin objeto apuntado levanta al jugador.
   update(dt, input, context) {
     for (const item of this.items) item.update?.(dt, context);
@@ -62,10 +75,18 @@ export class Interaction {
     const pressed = input.wasPressed(key);
     if (!this.target) {
       if (pressed && player?.seat) player.standUp();
+      this.prompt = null;
       return null;
     }
     if (pressed) this.target.interact(context);
-    return this.target.prompt(context);
+    if (this.target.removed) this.remove(this.target);
+    this.prompt = this.target?.prompt(context) ?? null;
+    return this.prompt;
+  }
+
+  // Texto del aviso actual (HUD).
+  get promptText() {
+    return typeof this.prompt === 'string' ? this.prompt : this.prompt?.text ?? '-';
   }
 
   // Objeto interactivo en el centro de la pantalla dentro del alcance, si ningún

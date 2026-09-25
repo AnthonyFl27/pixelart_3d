@@ -109,8 +109,37 @@ export const FURNITURE_TYPES = {
       log.rotateY(angle);
     }
     f.box('grain', [-ow + 0.05, 0.001, 0.12], [ow - 0.05, 0.03, depth - 0.05], { color: 0x4a4644 });
-    f.collider([-hw, 0, 0], [hw, top, depth]);
+    // Hogar y repisa; la campana, más estrecha, deja sitio al soporte de la escopeta.
+    f.collider([-hw, 0, 0], [hw, height + 0.08, depth]);
+    f.collider([-hw + 0.2, height + 0.08, 0], [hw - 0.2, top, depth - 0.2]);
     f.collider([-hw - 0.1, 0, depth], [hw + 0.1, MIN_COLLIDER, depth + 0.1]);
+  },
+
+  // Soporte de la escopeta (de pared, sobre la campana de la chimenea): dos ganchos de
+  // madera y la escopeta descargada, que se recoge con `E` (el soporte queda vacío).
+  gunRack(p, f) {
+    const { hooks = [-0.2, 0.15], color = 0x6e4a2c } = p;
+    for (const x of hooks) {
+      f.box('wood', [x - 0.03, -0.06, 0], [x + 0.03, 0.03, 0.02], { color: shade(color, 0.85) });
+      f.box('wood', [x - 0.018, -0.02, 0.02], [x + 0.018, 0.005, 0.1], { color });
+      f.box('wood', [x - 0.018, 0.005, 0.08], [x + 0.018, 0.04, 0.1], { color });
+    }
+    f.interactable({ type: 'pickup', item: 'shotgun', model: 'shotgun', position: [0, 0.021, 0.05], name: p.name ?? 'shotgun', hit: { min: [-0.34, -0.1, 0.01], max: [0.3, 0.08, 0.11] } });
+  },
+
+  // Caja de cartuchos sobre un mueble: `count` cartuchos (spec v3, 4.13).
+  shellBox(p, f) {
+    const { count = CONFIG.ammo.boxCount } = p;
+    f.interactable({ type: 'pickup', item: 'shells', count, model: 'shellBox', position: [0, 0, 0], name: p.name ?? 'shells', hit: { min: [-0.11, 0, -0.08], max: [0.11, 0.11, 0.08] } });
+  },
+
+  // Gancho de pared con el farol de aceite colgado a `hang` del suelo (de pared).
+  lanternHook(p, f) {
+    const { hang: y = 1.55 } = p;
+    f.box('wood', [-0.04, y + 0.2, 0], [0.04, y + 0.3, 0.02], { color: 0x6e4a2c });
+    f.box('iron', [-0.008, y + 0.24, 0.02], [0.008, y + 0.256, 0.1], { color: 0x3a3a3a });
+    f.box('iron', [-0.008, y + 0.24, 0.085], [0.008, y + 0.28, 0.1], { color: 0x3a3a3a });
+    f.interactable({ type: 'pickup', item: 'lantern', model: 'lantern', position: [0, y, 0.095], name: p.name ?? 'lantern', hit: { min: [-0.1, y - 0.02, 0.02], max: [0.1, y + 0.28, 0.18] } });
   },
 
   // Estantería de libros (de pared) con libros de colores y alguno inclinado.
@@ -390,7 +419,13 @@ export const FURNITURE_TYPES = {
 export function buildFurniture(entry, random, sink) {
   const build = FURNITURE_TYPES[entry.type];
   if (!build) throw new Error(`Tipo de mueble desconocido: "${entry.type}"`);
-  const f = {
+  build(entry, createBuilder(random, sink));
+}
+
+// Constructor `f` de piezas en coordenadas locales (también lo usan los modelos de los
+// objetos recogibles, src/interaction/pickup.js).
+export function createBuilder(random, sink) {
+  return {
     random,
     add: (layer, geometry, color) => sink.add(layer, geometry, color),
     // Caja de `min` a `max`; se devuelve la geometría por si el tipo quiere girarla
@@ -418,10 +453,9 @@ export function buildFurniture(entry, random, sink) {
         rotateY: (angle) => rotateAround(geometry, [x, y, z], 'Y', angle),
       };
     },
-    collider: (min, max) => sink.collider(min, max),
-    interactable: (data) => sink.interactable(data),
+    collider: (min, max) => sink.collider?.(min, max),
+    interactable: (data) => sink.interactable?.(data),
   };
-  build(entry, f);
 }
 
 function rotateAround(geometry, [x, y, z], axis, angle) {
