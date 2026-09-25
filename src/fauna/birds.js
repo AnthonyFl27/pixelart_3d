@@ -20,6 +20,7 @@ export class Birds {
     this.random = createRandom(deriveSeed(CONFIG.seed, 'birds'));
     this.perches = createPerches(colliders, this.random);
     this.time = 0;
+    this.started = false;
 
     const total = b.flocks * b.flockSize + b.solo;
     this.uniforms = {
@@ -101,6 +102,8 @@ export class Birds {
 
     this.birds.forEach((bird, i) => {
       const active = day.daylight > bird.shyness * 0.8 + 0.1;
+      // Al cargar de noche los pájaros inactivos empiezan ya fuera de escena.
+      if (!this.started && !active) bird.state = 'hidden';
       this.updateState(bird, active, dt, player);
       if (bird.state === 'hidden') {
         this.hide(i);
@@ -111,6 +114,7 @@ export class Birds {
       this.updateChirp(bird, dt, day, camera);
       this.writeInstance(bird, i);
     });
+    this.started = true;
     this.mesh.instanceMatrix.needsUpdate = true;
     this.flapAttribute.needsUpdate = true;
   }

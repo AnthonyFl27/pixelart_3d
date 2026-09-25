@@ -150,6 +150,7 @@ const loop = new GameLoop(renderer, {
       mode: player.mode,
       internal: pipeline.internalSize,
       drawCalls: renderer.info.render.calls,
+      triangles: renderer.info.render.triangles,
       muted: audio.muted,
       clock: `${dayCycle.clock} ${day.phase}`,
       birds: `${birds.visibleCount} (${birds.perchedCount} posados)`,

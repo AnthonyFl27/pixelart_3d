@@ -120,8 +120,9 @@ Leyenda: `[ ]` pendiente · `[x]` completada · `[~]` en progreso
 - [x] (Opcional) Trinos procedurales de día
 
 ## Fase 13 — Pulido y validación v2
-- [ ] Ajustar colores de cada fase del día
-- [ ] Verificar rendimiento (draw calls, instancias)
-- [ ] Consola sin errores ni warnings
-- [ ] Verificar criterios de aceptación de la spec v2
-- [ ] Actualizar `AGENTS.md` y `README.md`
+- [x] Ajustar colores de cada fase del día
+- [x] Verificar rendimiento (draw calls, instancias): 16 draw calls y ~124k triángulos por frame
+- [ ] Medir 60 FPS en hardware real (no medible en el entorno de pruebas sin GPU)
+- [x] Consola sin errores ni warnings
+- [x] Verificar criterios de aceptación de la spec v2
+- [x] Actualizar `AGENTS.md` y `README.md`

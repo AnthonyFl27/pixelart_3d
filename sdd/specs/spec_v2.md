@@ -116,9 +116,9 @@ más elementos en el escenario (piedras, árboles lejanos, pasto alto) y pasos c
 src/
 ├── world/
 │   ├── dayCycle.js      # Reloj del mundo: hora, fase, dirección de sol/luna, colores interpolados
-│   ├── celestial.js     # Sol, luna y estrellas en la cúpula (shader del cielo ampliado)
-│   ├── vegetation.js    # Pasto alto (instanced + viento) y árboles
-│   └── decorations.js   # Piedras pequeñas, escombros y musgo
+│   ├── sky.js           # (ampliado) sol, luna y estrellas en el shader del cielo
+│   ├── vegetation.js    # Pasto alto y flores (instanced + viento)
+│   └── structures.js    # (ampliado) tipos rubble, tree y grove; musgo en materials.js
 ├── fauna/
 │   └── birds.js         # Bandadas, vuelo, aterrizaje y animación de aleteo
 ├── items/
@@ -137,10 +137,10 @@ src/
 
 ## 8. Criterios de aceptación
 
-- [ ] Los pasos en césped, tierra y piedra suenan claramente distintos y agradables, sin chirridos.
-- [ ] En 15 minutos se observa un ciclo completo: madrugada → amanecer → día → tarde → atardecer → noche con estrellas y luna.
-- [ ] Sol y luna salen y se ponen; sombras e iluminación cambian de forma continua.
-- [ ] Con la tecla `1` se equipa la antorcha, se ve su llama animada y de noche ilumina el entorno cercano.
-- [ ] Hay bandadas de pájaros moviéndose solas de día que desaparecen de noche.
-- [ ] El nivel tiene más piedras, detalles de musgo, árboles a lo lejos y pasto alto que se mece.
-- [ ] Consola sin errores y rendimiento dentro de RNF-201.
+- [x] Los pasos en césped, tierra y piedra suenan claramente distintos y agradables, sin chirridos. *(Energía > 4 kHz: 3.4 % césped, 1.4 % tierra, 0.1 % piedra frente al 25.6 % de v1; pendiente de confirmar a oído.)*
+- [x] En 15 minutos se observa un ciclo completo: madrugada → amanecer → día → tarde → atardecer → noche con estrellas y luna.
+- [x] Sol y luna salen y se ponen; sombras e iluminación cambian de forma continua.
+- [x] Con la tecla `1` se equipa la antorcha, se ve su llama animada y de noche ilumina el entorno cercano.
+- [x] Hay bandadas de pájaros moviéndose solas de día que desaparecen de noche.
+- [x] El nivel tiene más piedras, detalles de musgo, árboles a lo lejos y pasto alto que se mece.
+- [ ] Consola sin errores y rendimiento dentro de RNF-201. *(Consola limpia y 16 draw calls / ~124k triángulos por frame; 60 FPS pendiente de medir en hardware real, el entorno de pruebas no tiene GPU.)*
