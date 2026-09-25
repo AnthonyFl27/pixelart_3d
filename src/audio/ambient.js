@@ -1,6 +1,7 @@
 import { CONFIG } from '../config.js';
+import { Footsteps } from './footsteps.js';
 
-// Audio procedural con Web Audio (sin archivos): viento de fondo y pasos.
+// Audio procedural con Web Audio (sin archivos): viento de fondo y pasos (footsteps.js).
 // El AudioContext se crea en `start()`, que debe llamarse tras un gesto del usuario.
 export class AmbientAudio {
   constructor() {
@@ -23,8 +24,8 @@ export class AmbientAudio {
     this.master.gain.value = this.muted ? 0 : CONFIG.audio.masterVolume;
     this.master.connect(ctx.destination);
 
-    this.whiteNoise = createNoiseBuffer(ctx, 1, 'white');
     this.createWind(ctx);
+    this.footsteps = new Footsteps(ctx, this.master);
   }
 
   suspend() {
@@ -42,7 +43,7 @@ export class AmbientAudio {
   // Viento: ruido marrón filtrado con volumen y filtro modulados lentamente.
   createWind(ctx) {
     const source = ctx.createBufferSource();
-    source.buffer = createNoiseBuffer(ctx, 4, 'brown');
+    source.buffer = createBrownNoiseBuffer(ctx, 4);
     source.loop = true;
 
     const filter = ctx.createBiquadFilter();
@@ -72,52 +73,22 @@ export class AmbientAudio {
     filterLfo.start();
   }
 
-  // Paso: ráfaga corta de ruido filtrado; más grave y seca en tierra que en césped.
-  step(surface) {
-    const ctx = this.context;
-    if (!ctx || this.muted || ctx.state !== 'running') return;
-
-    const now = ctx.currentTime;
-    const source = ctx.createBufferSource();
-    source.buffer = this.whiteNoise;
-    source.playbackRate.value = 0.85 + Math.random() * 0.3;
-
-    const filter = ctx.createBiquadFilter();
-    const gain = ctx.createGain();
-    const volume = CONFIG.audio.stepVolume * (0.8 + Math.random() * 0.4);
-    let duration;
-    if (surface === 'dirt') {
-      filter.type = 'lowpass';
-      filter.frequency.value = 700;
-      duration = 0.09;
-    } else {
-      filter.type = 'bandpass';
-      filter.frequency.value = 2600;
-      filter.Q.value = 0.8;
-      duration = 0.14;
-    }
-    gain.gain.setValueAtTime(0, now);
-    gain.gain.linearRampToValueAtTime(volume, now + 0.01);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
-
-    source.connect(filter).connect(gain).connect(this.master);
-    source.start(now, Math.random() * 0.5, duration + 0.02);
+  // Paso sobre `surface` ('grass' | 'dirt' | 'stone').
+  step(surface, intensity = 1) {
+    if (!this.footsteps || this.muted || this.context.state !== 'running') return;
+    this.footsteps.play(surface, intensity);
   }
 }
 
-function createNoiseBuffer(ctx, seconds, type) {
+function createBrownNoiseBuffer(ctx, seconds) {
   const length = Math.floor(ctx.sampleRate * seconds);
   const buffer = ctx.createBuffer(1, length, ctx.sampleRate);
   const data = buffer.getChannelData(0);
   let last = 0;
   for (let i = 0; i < length; i++) {
     const white = Math.random() * 2 - 1;
-    if (type === 'brown') {
-      last = (last + 0.02 * white) / 1.02;
-      data[i] = last * 3.5;
-    } else {
-      data[i] = white;
-    }
+    last = (last + 0.02 * white) / 1.02;
+    data[i] = last * 3.5;
   }
   return buffer;
 }

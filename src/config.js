@@ -176,8 +176,36 @@ export const CONFIG = {
     enabled: true,
     masterVolume: 0.6,
     windVolume: 0.3,
-    stepVolume: 0.5,
-    stepDistance: 1.9,     // metros recorridos entre pasos (andando)
+  },
+
+  // Pasos: dos capas de ruido filtrado (talón + planta) por superficie.
+  // noise: 'pink' | 'brown'. filter: tipo de BiquadFilter. Tiempos en segundos.
+  footsteps: {
+    volume: 0.55,
+    busLowpass: 3000,      // corta los agudos de todos los pasos (Hz)
+    stepDistance: 1.9,     // metros entre pasos al andar
+    runStride: 1.3,        // multiplicador de zancada al correr
+    runIntensity: 1.25,
+    landIntensity: 1.7,
+    landMinSpeed: 4,       // velocidad de caída mínima para sonar al aterrizar (u/s)
+    surfaces: {
+      grass: {
+        toeDelay: 0.08,
+        heel: { noise: 'pink', filter: 'lowpass', frequency: 1300, q: 0.5, highpass: 250, attack: 0.018, decay: 0.12, gain: 0.55 },
+        toe: { noise: 'pink', filter: 'lowpass', frequency: 1700, q: 0.5, highpass: 350, attack: 0.025, decay: 0.16, gain: 0.45 },
+      },
+      dirt: {
+        toeDelay: 0.07,
+        heel: { noise: 'brown', filter: 'lowpass', frequency: 750, q: 0.7, highpass: 70, attack: 0.006, decay: 0.09, gain: 0.9 },
+        toe: { noise: 'pink', filter: 'bandpass', frequency: 1500, q: 0.9, highpass: 400, attack: 0.008, decay: 0.07, gain: 0.35 },
+      },
+      stone: {
+        toeDelay: 0.06,
+        heel: { noise: 'pink', filter: 'lowpass', frequency: 1100, q: 0.6, highpass: 120, attack: 0.002, decay: 0.035, gain: 0.5 },
+        toe: { noise: 'pink', filter: 'bandpass', frequency: 900, q: 1.2, highpass: 200, attack: 0.002, decay: 0.03, gain: 0.3 },
+        tone: { frequency: 125, drop: 0.6, decay: 0.08, gain: 0.45 },
+      },
+    },
   },
 
   debug: {

@@ -85,16 +85,20 @@ export function resolveHorizontal(position, { radius, height, stepHeight }, coll
   }
 }
 
-// Altura del suelo bajo el jugador: terreno o parte superior de una caja
-// alcanzable (techo por debajo de feetY + stepHeight).
-export function groundHeight(position, { radius, stepHeight }, colliders, terrain) {
-  let ground = terrain.getHeight(position.x, position.z);
+// Suelo bajo el jugador: terreno o parte superior de una caja alcanzable
+// (techo por debajo de feetY + stepHeight). `onStructure` indica suelo de piedra.
+export function groundInfo(position, { radius, stepHeight }, colliders, terrain) {
+  let height = terrain.getHeight(position.x, position.z);
+  let onStructure = false;
   const footRadiusSq = (radius * 0.6) ** 2;
   for (const c of colliders) {
-    if (c.maxY > position.y + stepHeight || c.maxY <= ground) continue;
-    if (distanceSq(c, position.x, position.z) < footRadiusSq) ground = c.maxY;
+    if (c.maxY > position.y + stepHeight || c.maxY <= height) continue;
+    if (distanceSq(c, position.x, position.z) < footRadiusSq) {
+      height = c.maxY;
+      onStructure = true;
+    }
   }
-  return ground;
+  return { height, onStructure };
 }
 
 // Altura del techo más bajo por encima de la cabeza (Infinity si no hay).

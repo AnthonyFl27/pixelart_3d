@@ -81,12 +81,12 @@ Leyenda: `[ ]` pendiente · `[x]` completada · `[~]` en progreso
 - [x] Añadir tareas v2 a `sdd/task.md`
 
 ## Fase 8 — Sonido de pasos v2
-- [ ] Mover pasos a `src/audio/footsteps.js` con bus filtrado (paso bajo + compresor)
-- [ ] Síntesis por capas (talón + planta) con variación aleatoria
-- [ ] Sonido de césped suave
-- [ ] Sonido de tierra
-- [ ] Sonido de piedra y detección de superficie `stone` sobre estructuras
-- [ ] Volumen/ritmo según velocidad y paso de aterrizaje
+- [x] Mover pasos a `src/audio/footsteps.js` con bus filtrado (paso bajo + compresor)
+- [x] Síntesis por capas (talón + planta) con variación aleatoria
+- [x] Sonido de césped suave
+- [x] Sonido de tierra
+- [x] Sonido de piedra y detección de superficie `stone` sobre estructuras
+- [x] Volumen/ritmo según velocidad y paso de aterrizaje
 
 ## Fase 9 — Ciclo día/noche
 - [ ] `dayCycle.js`: hora, fase y direcciones de sol/luna (día de 15 min configurable)

@@ -1,10 +1,11 @@
 import * as THREE from 'three';
 import { CONFIG } from '../config.js';
-import { resolveHorizontal, groundHeight, ceilingHeight } from './collision.js';
+import { resolveHorizontal, groundInfo, ceilingHeight } from './collision.js';
 
 // Controlador en primera persona: cámara con ratón, andar/correr/saltar y modo vuelo.
 // `position` es la posición de los pies.
 export class PlayerController {
+  // onStep(surface, intensity): paso o aterrizaje sobre 'grass' | 'dirt' | 'stone'.
   constructor(camera, terrain, colliders, spawn, { onStep } = {}) {
     this.camera = camera;
     this.terrain = terrain;
@@ -19,6 +20,7 @@ export class PlayerController {
     this.flying = false;
     this.running = false;
     this.stepDistance = 0;
+    this.onStructure = false;
 
     this.body = {
       radius: CONFIG.player.radius,
@@ -86,17 +88,30 @@ export class PlayerController {
     resolveHorizontal(this.position, this.body, this.colliders);
 
     const wasOnGround = this.onGround;
+    const fallSpeed = -this.velocity.y;
     this.position.y += this.velocity.y * dt;
     this.resolveVertical(wasOnGround);
 
-    if (this.onGround) {
+    const f = CONFIG.footsteps;
+    if (this.onGround && !wasOnGround && fallSpeed >= f.landMinSpeed) {
+      this.stepDistance = 0;
+      this.onStep?.(this.surface, f.landIntensity);
+    } else if (this.onGround) {
       this.stepDistance += Math.hypot(this.position.x - startX, this.position.z - startZ);
-      const stride = CONFIG.audio.stepDistance * (this.running ? 1.3 : 1);
+      const stride = f.stepDistance * (this.running ? f.runStride : 1);
       if (this.stepDistance >= stride) {
         this.stepDistance = 0;
-        this.onStep?.(this.terrain.getSurface(this.position.x, this.position.z));
+        this.onStep?.(this.surface, this.running ? f.runIntensity : 1);
       }
     }
+  }
+
+  get surface() {
+    return this.onStructure ? 'stone' : this.terrain.getSurface(this.position.x, this.position.z);
+  }
+
+  get horizontalSpeed() {
+    return Math.hypot(this.velocity.x, this.velocity.z);
   }
 
   updateFlying(dt, input) {
@@ -113,7 +128,7 @@ export class PlayerController {
     resolveHorizontal(this.position, this.body, this.colliders);
     this.position.y += this.velocity.y * dt;
 
-    const ground = groundHeight(this.position, this.body, this.colliders, this.terrain);
+    const ground = groundInfo(this.position, this.body, this.colliders, this.terrain).height;
     if (this.position.y < ground) {
       this.position.y = ground;
       this.velocity.y = Math.max(this.velocity.y, 0);
@@ -128,7 +143,8 @@ export class PlayerController {
       this.velocity.y = 0;
     }
 
-    const ground = groundHeight(this.position, this.body, this.colliders, this.terrain);
+    const { height: ground, onStructure } = groundInfo(this.position, this.body, this.colliders, this.terrain);
+    this.onStructure = onStructure;
     // Pegarse al suelo al bajar pendientes o escalones en lugar de "despegar".
     const snap = wasOnGround && this.velocity.y <= 0 && this.position.y - ground < this.body.stepHeight;
     if (this.position.y <= ground || snap) {
