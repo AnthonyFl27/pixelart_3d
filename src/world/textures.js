@@ -24,6 +24,12 @@ export function createTextures() {
     rustyMetal: createCorrugatedTexture('rustyMetal', CONFIG.textures.rustyMetal),
     lattice: createLatticeTexture('lattice', CONFIG.textures.lattice),
     dirtyGlass: createGlassTexture('dirtyGlass', CONFIG.textures.dirtyGlass),
+    wallpaper: createWallpaperTexture('wallpaper', CONFIG.textures.wallpaper),
+    fabric: createFabricTexture('fabric', CONFIG.textures.fabric),
+    rug: createRugTexture('rug', CONFIG.textures.rug),
+    iron: createPaletteTexture('iron', CONFIG.textures.iron),
+    enamel: createPaletteTexture('enamel', CONFIG.textures.enamel),
+    grain: createPaletteTexture('grain', CONFIG.textures.grain),
     noise: createNoiseTexture('noise', CONFIG.textures.noise),
   };
 }
@@ -348,6 +354,95 @@ function createGlassTexture(name, p) {
     }
   }
   return px.finish(name);
+}
+
+// Papel pintado descolorido: rayas verticales suaves con un motivo pequeño repetido,
+// manchas de humedad y desvaído hacia abajo.
+function createWallpaperTexture(name, p) {
+  const seed = deriveSeed(CONFIG.seed, name);
+  const random = createRandom(seed);
+  const noise = new ValueNoise2D(seed);
+  const [base, light, motif, stain] = p.colors.map(hexToRgb);
+  const px = createPixelCanvas();
+  const { size } = px;
+  const motifShape = ['.#.', '###', '.#.'];
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      let color = x % p.stripe < 2 ? light : base;
+      const mx = x % p.motifSpacing;
+      const my = (y + (Math.floor(x / p.motifSpacing) % 2) * (p.motifSpacing / 2)) % p.motifSpacing;
+      if (mx < 3 && my < 3 && motifShape[my][mx] === '#') color = motif;
+      const damp = noise.fbm((x / size) * 4, (y / size) * 4, { octaves: 3, period: 4 });
+      if (damp > 1 - p.stains || random() < 0.02) color = stain;
+      px.put(x, y, color);
+    }
+  }
+  return px.finish(name);
+}
+
+// Tela: trama de hilos (texels alternos) con ruido; se tiñe con el color de vértice.
+function createFabricTexture(name, p) {
+  const seed = deriveSeed(CONFIG.seed, name);
+  const random = createRandom(seed);
+  const noise = new ValueNoise2D(seed);
+  const colors = p.colors.map(hexToRgb);
+  const px = createPixelCanvas();
+  const { size } = px;
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const weave = (x + y) % 2;
+      const wear = noise.fbm((x / size) * 4, (y / size) * 4, { octaves: 2, period: 4 });
+      const shade = THREE.MathUtils.clamp(1 + weave + Math.round((wear - 0.5) * 2) - (random() < 0.05 ? 1 : 0), 0, colors.length - 1);
+      px.put(x, y, colors[shade]);
+    }
+  }
+  return px.finish(name);
+}
+
+// Alfombra: rombos concéntricos con periodo `period`, colores gastados.
+function createRugTexture(name, p) {
+  const random = createRandom(deriveSeed(CONFIG.seed, name));
+  const colors = p.colors.map(hexToRgb);
+  const px = createPixelCanvas();
+  const { size } = px;
+  const half = p.period / 2;
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const dx = Math.abs((x % p.period) - half + 0.5);
+      const dy = Math.abs((y % p.period) - half + 0.5);
+      const ring = Math.floor((dx + dy) / 2);
+      let index = ring % colors.length;
+      if (random() < p.wear) index = Math.max(0, index - 1);
+      px.put(x, y, colors[index]);
+    }
+  }
+  return px.finish(name);
+}
+
+// Array de texturas (una capa por nombre) para el material por capas: todas repiten
+// y comparten tamaño. Las filas se invierten porque las texturas 3D no admiten flipY.
+export function createLayeredTexture(textures, names) {
+  const size = CONFIG.textures.size;
+  const layerBytes = size * size * 4;
+  const data = new Uint8Array(layerBytes * names.length);
+  names.forEach((name, layer) => {
+    const canvas = textures[name].image;
+    const pixels = canvas.getContext('2d').getImageData(0, 0, size, size).data;
+    for (let y = 0; y < size; y++) {
+      const row = (size - 1 - y) * size * 4;
+      data.set(pixels.subarray(row, row + size * 4), layer * layerBytes + y * size * 4);
+    }
+  });
+  const texture = new THREE.DataArrayTexture(data, size, size, names.length);
+  texture.name = 'layers';
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.magFilter = THREE.NearestFilter;
+  texture.minFilter = THREE.NearestFilter;
+  texture.generateMipmaps = false;
+  texture.needsUpdate = true;
+  return texture;
 }
 
 function finishCanvasTexture(canvas, name) {

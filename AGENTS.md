@@ -53,7 +53,7 @@ pixelart_3d/
 │   │   └── shaders/postfx.js   # Outline, paleta y dithering
 │   ├── world/
 │   │   ├── textures.js         # Texturas procedurales (piedra, césped, madera, tablas, tablillas, chapa, celosía, cristal…)
-│   │   ├── materials.js        # Materiales toon por bandas + musgo en la piedra
+│   │   ├── materials.js        # Materiales toon por bandas, musgo y material por capas (array de texturas)
 │   │   ├── geometryUtils.js    # UVs de densidad constante
 │   │   ├── terrain.js          # Terreno por trozos de resolución variable, getHeight(x, z) y suelo (shader)
 │   │   ├── terrainFeatures.js  # Relieve: ruido por capas, hundimientos, montículos, surcos, caminos
@@ -63,7 +63,10 @@ pixelart_3d/
 │   │   ├── sky.js              # Cúpula de cielo: degradado, nubes, sol, luna y estrellas
 │   │   ├── lighting.js         # Sol/luna con sombras, ambiente y luz de relleno según la hora
 │   │   ├── structures.js       # Fábrica de estructuras: piedras, escombros, árboles, puente, leñera, valla, cabaña
-│   │   ├── cabin.js            # Cabaña: paredes de tablas con huecos, tejado con agujero, porche, chimenea, pilotes
+│   │   ├── cabin.js            # Cabaña: paredes, tejado con agujero, porche, chimenea, pilotes e interior
+│   │   ├── furniture.js        # Fábrica de muebles (sofá, chimenea, cocina de leña, nevera, televisor…)
+│   │   ├── interiorLighting.js # Luces del interior en el shader: relleno según el día, lámpara y tele
+│   │   ├── interiors.js        # Oculta el interior desde fuera y lejos
 │   │   ├── zones.js            # Zonas con nombre (interior de la cabaña) y consulta de zona
 │   │   ├── vegetation.js       # Pasto alto y flores instanciados con viento
 │   │   └── levelLoader.js      # Instancia un nivel y fusiona las piezas por material
@@ -75,15 +78,20 @@ pixelart_3d/
 │   │   └── torch.js            # Antorcha en primera persona: llama, chispas y luz
 │   ├── interaction/
 │   │   ├── interaction.js      # Rayo desde la cámara, objeto apuntado, tecla E y tipos interactivos
-│   │   └── door.js             # Puerta con bisagra, animación, colisión que gira y bloqueo
+│   │   ├── door.js             # Puerta con bisagra, animación, colisión que gira y bloqueo
+│   │   ├── seat.js             # Asientos: sentarse y levantarse
+│   │   ├── lamp.js             # Lámpara de aceite
+│   │   ├── television.js       # Televisor CRT: NO SIGNAL, encendido/apagado, luz y sonido
+│   │   └── hitBox.js           # Caja invisible de apuntado
 │   ├── fauna/birds.js          # Pájaros: bandadas, posado, actividad según la hora
 │   ├── levels/meadow.js        # Nivel como datos (spawn, caminos, relieve, estructuras)
+│   ├── levels/cabinLayout.js   # Distribución interior de la cabaña (tabique, revestimientos, muebles)
 │   ├── ui/                     # overlay.js (inicio/pausa), hud.js (F3), hotbar.js, prompt.js (mira y aviso [E]), ui.css
 │   └── audio/
 │       ├── ambient.js          # Viento, trinos y bus maestro (Web Audio)
 │       ├── footsteps.js        # Pasos por superficie (césped, tierra, piedra)
 │       ├── water.js            # Sonido procedural del riachuelo según distancia y dirección
-│       └── sfx.js              # Efectos con posición: chirrido de bisagra, golpe y pestillo
+│       └── sfx.js              # Efectos con posición: bisagra, golpe y pestillo, clic, tubo de la tele
 ├── sdd/                        # Spec-Driven Development
 │   ├── specs/spec_v1.md        # Especificación del prototipo
 │   ├── specs/spec_v2.md        # Mundo vivo: día/noche, antorcha, fauna y entorno
@@ -104,7 +112,13 @@ pixelart_3d/
   recibe `ground(lx, lz)` para consultar el terreno. Puede devolver `{ pieces, baseY, zones }`
   con volúmenes con nombre (p. ej. el interior de la cabaña).
 - **Cabaña:** dimensiones, huecos de puerta y ventanas, tejado, porche y chimenea en `CONFIG.cabin`;
-  cualquier clave se puede sobrescribir en la entrada `cabin` del nivel.
+  cualquier clave se puede sobrescribir en la entrada `cabin` del nivel. El interior (tabique,
+  revestimientos, muebles) es `layout` = `CABIN_LAYOUT` de `src/levels/cabinLayout.js`.
+- **Nuevo mueble:** añadir una función a `FURNITURE_TYPES` en `src/world/furniture.js` (cajas y cilindros
+  con capa y tinte, colisionadores e interactivos como `seat`, `lamp` o `television`) y una entrada en
+  `CABIN_LAYOUT.furniture`. Las piezas `interior` se fusionan aparte y se ocultan desde lejos.
+- **Materiales por capas:** las texturas de `LAYERS` (`src/world/materials.js`) comparten un único material
+  (array de texturas + color de vértice): una pieza con uno de esos nombres de material no añade draw calls.
 - **Nuevo objeto interactivo:** añadir un tipo a `INTERACTABLE_TYPES` en `src/interaction/interaction.js`
   (objeto con `meshes`, `prompt()`, `interact()` y opcionalmente `object`, `collider` y `update()`) y
   declararlo como dato: las estructuras devuelven `interactables: [{ type, position, rotationY, … }]`.
@@ -145,9 +159,12 @@ pixelart_3d/
 - `F3` muestra también la zona (`cabin` dentro de la cabaña, `exterior` fuera) y el objeto apuntado.
 - Puertas: `?pos=-76.2,10.3,1.57` (porche, delante de la puerta principal) y `?pos=-87.5,7.5,-1.57`
   (escalones de la puerta trasera de la cocina). `E` abre y cierra; no se cierran con el jugador en el recorrido.
+- Interior: `?pos=-81.2,11,3.14&hora=22` (sala de noche: lámpara en la mesa baja, sofá y televisor)
+  y `?pos=-82,7.8,0` (cocina). Sentado, `E` sin objeto apuntado, `Espacio` o `WASD` levantan.
 - Mantener `T` acelera el tiempo.
 - Revisar visualmente contra la imagen/video de referencia.
-- Comprobar controles: movimiento, cámara, salto, colisión con estructuras, pausa, inventario, antorcha y puertas.
+- Comprobar controles: movimiento, cámara, salto, colisión con estructuras, pausa, inventario, antorcha, puertas,
+  asientos, lámpara y televisor.
 
 ## Commits
 

@@ -22,17 +22,26 @@ export class PlayerController {
     this.stepDistance = 0;
     this.onStructure = false;
     this.inWater = false;
+    // Asiento (interaction/seat.js): blend 0 de pie … 1 sentado.
+    this.seat = null;
+    this.seatBlend = 0;
+    this.seatTarget = 0;
+    this.seatYaw = 0;
+    this.seatEye = new THREE.Vector3();
 
     this.body = {
       radius: CONFIG.player.radius,
       height: CONFIG.player.height,
       stepHeight: CONFIG.player.stepHeight,
     };
+    // Aparecer encima de un suelo elevado (p. ej. dentro de la cabaña) si lo hay.
+    this.position.y = groundInfo(this.position, { ...this.body, stepHeight: CONFIG.player.spawnClimb }, colliders, terrain).height;
     this.wish = new THREE.Vector3();
     this.updateCamera();
   }
 
   get mode() {
+    if (this.seat) return 'sentado';
     if (this.flying) return 'vuelo';
     return this.inWater ? 'vadear' : 'andar';
   }
@@ -42,8 +51,29 @@ export class PlayerController {
     this.velocity.y = 0;
   }
 
+  // Sentarse en `seat`: la cámara baja al asiento mirando a su frente (+Z local).
+  sit(seat) {
+    this.seat = seat;
+    this.seatTarget = 1;
+    this.seatYaw = seat.rotationY + Math.PI;
+    const forward = new THREE.Vector3(Math.sin(seat.rotationY), 0, Math.cos(seat.rotationY));
+    this.seatEye.copy(seat.position).addScaledVector(forward, -0.05);
+    this.seatEye.y += CONFIG.player.seatedEyeHeight;
+    this.velocity.set(0, 0, 0);
+    this.flying = false;
+  }
+
+  standUp() {
+    this.seatTarget = 0;
+  }
+
   update(dt, input) {
     const p = CONFIG.player;
+    if (this.seat) {
+      this.updateSeated(dt, input);
+      this.updateCamera();
+      return;
+    }
 
     // Mirar.
     const mouse = input.consumeMouse();
@@ -67,6 +97,27 @@ export class PlayerController {
 
     this.keepInBounds();
     this.updateCamera();
+  }
+
+  // Sentado: sin movimiento, giro limitado respecto al frente del asiento. Espacio o una
+  // tecla de movimiento levantan al jugador (E sin objeto apuntado: ver interaction.js).
+  updateSeated(dt, input) {
+    const p = CONFIG.player;
+    const mouse = input.consumeMouse();
+    const maxPitch = THREE.MathUtils.degToRad(p.maxPitch);
+    this.pitch = THREE.MathUtils.clamp(this.pitch - mouse.y * p.mouseSensitivity, -maxPitch, maxPitch);
+    const limit = THREE.MathUtils.degToRad(p.seatYawLimit);
+    const offset = Math.atan2(Math.sin(this.yaw - this.seatYaw), Math.cos(this.yaw - this.seatYaw)) - mouse.x * p.mouseSensitivity;
+    const clamped = THREE.MathUtils.clamp(offset, -limit, limit);
+    // Al sentarse la mirada gira con suavidad hasta quedar dentro del límite.
+    const turn = Math.min(1, dt / p.seatTransition * 3);
+    this.yaw = this.seatYaw + (this.seatBlend < 1 ? offset + (clamped - offset) * turn : clamped);
+
+    const leave = ['Space', 'KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
+    if (this.seatTarget === 1 && this.seatBlend >= 1 && leave.some((code) => input.wasPressed(code))) this.standUp();
+    const step = dt / p.seatTransition;
+    this.seatBlend = THREE.MathUtils.clamp(this.seatBlend + (this.seatTarget ? step : -step), 0, 1);
+    if (this.seatTarget === 0 && this.seatBlend === 0) this.seat = null;
   }
 
   updateWalking(dt, input) {
@@ -179,11 +230,16 @@ export class PlayerController {
     const { eyeHeight } = CONFIG.player;
     const { cameraSnap, cameraSnapUnit } = CONFIG.render;
     const snap = (v) => (cameraSnap ? Math.round(v / cameraSnapUnit) * cameraSnapUnit : v);
-    this.camera.position.set(
-      snap(this.position.x),
-      snap(this.position.y + eyeHeight),
-      snap(this.position.z),
-    );
+    let x = this.position.x;
+    let y = this.position.y + eyeHeight;
+    let z = this.position.z;
+    if (this.seat) {
+      const t = this.seatBlend * this.seatBlend * (3 - 2 * this.seatBlend);
+      x += (this.seatEye.x - x) * t;
+      y += (this.seatEye.y - y) * t;
+      z += (this.seatEye.z - z) * t;
+    }
+    this.camera.position.set(snap(x), snap(y), snap(z));
     this.camera.rotation.set(this.pitch, this.yaw, 0);
   }
 }

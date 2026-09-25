@@ -309,6 +309,45 @@ export const CONFIG = {
       highlightAlpha: 0.55,
       highlightPeriod: 23,
     },
+    // Interior de la cabaña. Tela, hierro, esmalte y grano se tiñen con el color de vértice.
+    wallpaper: {
+      colors: [0x7d7658, 0x8c8565, 0x6a5d3f, 0x5e5842], // fondo, raya, motivo, mancha
+      stripe: 8,
+      motifSpacing: 8,
+      stains: 0.12,
+    },
+    fabric: {
+      colors: [0x9a9a9a, 0xb4b4b4, 0xcacaca, 0xdedede],
+    },
+    rug: {
+      colors: [0x5e1a16, 0x8a2a20, 0xa8442c, 0xc2904e, 0x2c2436],
+      period: 16,
+      wear: 0.06,
+    },
+    iron: {
+      colors: [0x1c1c1e, 0x262628, 0x303032, 0x3c3c3e],
+      frequency: 5,
+      octaves: 2,
+      blotchWeight: 0.6,
+      speckleLight: 0.04,
+      speckleDark: 0.04,
+    },
+    enamel: {
+      colors: [0xc9c2ae, 0xd6cfbb, 0xe2dbc8, 0xebe5d3],
+      frequency: 3,
+      octaves: 2,
+      blotchWeight: 0.7,
+      speckleLight: 0.02,
+      speckleDark: 0.02,
+    },
+    grain: {
+      colors: [0xc4c4c4, 0xd0d0d0, 0xdcdcdc, 0xe8e8e8],
+      frequency: 6,
+      octaves: 2,
+      blotchWeight: 0.4,
+      speckleLight: 0.03,
+      speckleDark: 0.04,
+    },
     moss: {
       colors: [0x3d5a1e, 0x4f6e24, 0x62802c, 0x7a9636],
       frequency: 4,
@@ -546,6 +585,9 @@ export const CONFIG = {
       stackDepth: 0.7,
       aboveRoof: 0.7,        // sobre la cumbrera
     },
+    floorColor: 0xc8b49a,    // tinte de los tablones del suelo interior
+    partitionColor: 0xd8c4a4,
+    liningPartitionGap: 0.05, // el revestimiento se separa del tabique (u)
     pilingSpacing: 2.2,
     latticeSegment: 1.2,
     brokenLattice: 0.1,
@@ -599,6 +641,7 @@ export const CONFIG = {
     height: 1.8,
     radius: 0.35,
     stepHeight: 0.45,      // altura máxima que se sube sin saltar
+    spawnClimb: 1,         // al aparecer, se sube a suelos elevados hasta esta altura (u)
     walkSpeed: 5,
     runSpeed: 9,
     flySpeed: 14,
@@ -608,6 +651,9 @@ export const CONFIG = {
     gravity: 20,
     mouseSensitivity: 0.0022,
     maxPitch: 89,          // grados
+    seatedEyeHeight: 0.68, // ojos sobre el cojín al sentarse (u)
+    seatTransition: 0.45,  // segundos para sentarse o levantarse
+    seatYawLimit: 100,     // giro máximo (grados) respecto al frente del asiento
     boundsMargin: 20,      // distancia mínima al borde del terreno
     wadeSpeedFactor: 0.55, // velocidad al vadear el riachuelo (sin correr)
     wadeMinDepth: 0.05,    // profundidad mínima del agua para contar como vadeo
@@ -632,6 +678,21 @@ export const CONFIG = {
         q: 8,
         gain: 1,               // la banda estrecha deja pasar poca energía
         closeGain: 0.5,        // chirrido más suave al cerrar
+      },
+      click: {
+        frequency: 3200,
+        gain: 0.6,
+      },
+      // Tubo del televisor: zumbido grave, silbido agudo y estática suave.
+      tube: {
+        hum: 60,
+        humGain: 0.05,
+        whine: 15700,
+        whineGain: 0.006,
+        staticBand: 3000,
+        staticGain: 0.12,
+        fadeIn: 0.4,
+        fadeOut: 0.12,
       },
       slam: {
         thump: 72,             // golpe grave (Hz)
@@ -728,9 +789,65 @@ export const CONFIG = {
     chirpDistance: 35,
   },
 
+  // Interior de la cabaña (src/world/interiorLighting.js, levels/cabinLayout.js).
+  interior: {
+    lights: 3,             // luces puntuales del interior (0 lámpara, 1 televisor, 2 libre)
+    lightBands: 6,         // escalones de intensidad de esas luces
+    ambientScale: 0.45,    // ambiente exterior que llega dentro
+    fillColor: 0xffe2bc,   // relleno cálido que sigue a la luz del día
+    fillDay: 0.5,
+    fillNight: 0.04,
+    indoorCameraFill: 0.35, // la luz de relleno de la cámara se atenúa estando dentro
+    hideDistance: 18,      // el interior se oculta fuera de la cabaña y más lejos que esto (u)
+  },
+
+  // Lámpara de aceite (src/interaction/lamp.js): luz 0 del interior.
+  lamp: {
+    lightIndex: 0,
+    lightColor: 0xffb45a,
+    intensity: 1.6,
+    range: 6.5,
+    lightHeight: 0.05,     // sobre la llama
+    flicker: 0.06,
+    fadeTime: 0.35,        // segundos para encender o apagar
+    flameSize: [0.02, 0.05, 0.02],
+    flameColor: 0xffa030,
+    coreColor: 0xfff0b0,
+  },
+
+  // Televisor de tubo (src/interaction/television.js): luz 1 del interior.
+  television: {
+    resolution: [48, 36],  // texels de la pantalla
+    text: 'NO SIGNAL',
+    bulge: 0.02,           // abombado de la pantalla (u)
+    fps: 15,               // cadencia del ruido
+    gray: 128,             // gris de fondo (0-255)
+    noise: 40,
+    scanline: 0.82,        // brillo de las líneas impares
+    rollSpeed: 9,          // franja de barrido (texels/s)
+    rollHeight: 3,
+    rollBoost: 22,
+    flicker: 0.06,
+    onTime: 0.55,          // segundos de la animación de encendido
+    offTime: 0.7,
+    lightIndex: 1,
+    lightColor: 0xa8c4ff,
+    lightIntensity: 0.9,
+    lightRange: 4.5,
+    lightOffset: 1.1,      // delante de la pantalla (u): ilumina la sala, no la pared de detrás
+  },
+
+  // Paletas de detalles del mobiliario (src/world/furniture.js).
+  furniture: {
+    bookColors: [0x7a2a22, 0x2a4a6a, 0x3a5a2a, 0x8a6a2a, 0x5a3a5a, 0x9a8a6a, 0x3a3a3a, 0xa04a2a],
+    jarColors: [0xb0c8a0, 0xc8a060, 0xa06a3a, 0xd0d0b8, 0x8aa0b0],
+    plateColors: [0xffffff, 0xe8e0d0, 0xd8e0e8],
+  },
+
   // Sistema de interacción (src/interaction/): rayo desde el centro de la cámara.
   interaction: {
     reach: 2.2,            // alcance (u) desde la cámara
+    seatedReach: 4.8,      // alcance sentado (encender la tele desde el sofá)
     key: 'KeyE',
     occlusionMargin: 0.05, // un colisionador tapa al objeto si está este tanto por delante (u)
   },

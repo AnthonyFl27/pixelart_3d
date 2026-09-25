@@ -92,6 +92,73 @@ export class Sfx {
     }
   }
 
+  // Clic de interruptor: chasquido agudo y un golpecito grave.
+  click(position) {
+    const c = CONFIG.audio.sfx.click;
+    const now = this.ctx.currentTime + 0.005;
+    const output = this.spatial(position);
+    this.burst('pink', 'highpass', c.frequency * vary(0.1), 0.7, c.gain, now, 0.001, 0.008, output);
+    this.burst('brown', 'lowpass', 400, 0.7, c.gain * 0.6, now, 0.002, 0.02, output);
+  }
+
+  // Tubo de imagen encendido (bucle): zumbido de red, silbido agudo y estática.
+  // Devuelve { stop() } para apagarlo con un fundido corto.
+  tube(position) {
+    const t = CONFIG.audio.sfx.tube;
+    const ctx = this.ctx;
+    const now = ctx.currentTime + 0.01;
+    const envelope = ctx.createGain();
+    envelope.gain.setValueAtTime(0, now);
+    envelope.gain.linearRampToValueAtTime(1, now + t.fadeIn);
+    envelope.connect(this.spatial(position));
+
+    const hum = ctx.createOscillator();
+    hum.type = 'sawtooth';
+    hum.frequency.value = t.hum;
+    const humFilter = ctx.createBiquadFilter();
+    humFilter.type = 'lowpass';
+    humFilter.frequency.value = t.hum * 4;
+    const humGain = ctx.createGain();
+    humGain.gain.value = t.humGain;
+    hum.connect(humFilter).connect(humGain).connect(envelope);
+
+    const whine = ctx.createOscillator();
+    whine.type = 'sine';
+    whine.frequency.value = t.whine;
+    const whineGain = ctx.createGain();
+    whineGain.gain.value = t.whineGain;
+    whine.connect(whineGain).connect(envelope);
+
+    const noise = ctx.createBufferSource();
+    noise.buffer = this.noise.pink;
+    noise.loop = true;
+    const band = ctx.createBiquadFilter();
+    band.type = 'bandpass';
+    band.frequency.value = t.staticBand;
+    band.Q.value = 0.6;
+    const noiseGain = ctx.createGain();
+    noiseGain.gain.value = t.staticGain;
+    // Crepitar: el volumen de la estática oscila despacio.
+    const wobble = ctx.createOscillator();
+    wobble.frequency.value = 3.3;
+    const wobbleDepth = ctx.createGain();
+    wobbleDepth.gain.value = t.staticGain * 0.3;
+    wobble.connect(wobbleDepth).connect(noiseGain.gain);
+    noise.connect(band).connect(noiseGain).connect(envelope);
+
+    const sources = [hum, whine, noise, wobble];
+    for (const source of sources) source.start(now);
+    return {
+      stop: () => {
+        const end = ctx.currentTime;
+        envelope.gain.cancelScheduledValues(end);
+        envelope.gain.setValueAtTime(envelope.gain.value, end);
+        envelope.gain.linearRampToValueAtTime(0, end + t.fadeOut);
+        for (const source of sources) source.stop(end + t.fadeOut + 0.05);
+      },
+    };
+  }
+
   // Cierre: golpe grave de la hoja contra el marco, ruido del impacto y el clic
   // metálico del pestillo un instante después.
   slam(position) {

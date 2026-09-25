@@ -72,6 +72,13 @@ export class AmbientAudio {
     this.sfx[name](position, options);
   }
 
+  // Efecto continuo de sfx.js ('tube'…) en `position`: devuelve { stop() } o null sin audio.
+  // Se crea aunque esté silenciado (el bus maestro ya está a 0).
+  startSfx(name, position, options) {
+    if (!this.sfx || this.context.state !== 'running') return null;
+    return this.sfx[name](position, options);
+  }
+
   suspend() {
     this.context?.suspend();
   }

@@ -6,12 +6,14 @@ import { Input } from './core/input.js';
 import { PixelPipeline } from './render/pixelPipeline.js';
 import { createTextures } from './world/textures.js';
 import { createMaterials } from './world/materials.js';
+import { InteriorLighting } from './world/interiorLighting.js';
 import { Terrain } from './world/terrain.js';
 import { Sky } from './world/sky.js';
 import { Lighting } from './world/lighting.js';
 import { DayCycle } from './world/dayCycle.js';
 import { loadLevel } from './world/levelLoader.js';
 import { zoneAt } from './world/zones.js';
+import { Interiors } from './world/interiors.js';
 import { Vegetation } from './world/vegetation.js';
 import { StreamWater } from './world/stream.js';
 import { PlayerController } from './player/controller.js';
@@ -39,7 +41,8 @@ onResize((width, height) => pipeline.resize(width, height));
 
 // --- Mundo -------------------------------------------------------------------
 const textures = createTextures();
-const materials = createMaterials(textures);
+const interiorLighting = new InteriorLighting();
+const materials = createMaterials(textures, interiorLighting);
 
 const terrain = new Terrain(level, materials, textures);
 scene.add(terrain.mesh);
@@ -59,7 +62,7 @@ if (Number.isFinite(startHour)) {
 }
 // Las rocas del cauce se añaden como estructuras del nivel.
 const streamRocks = terrain.stream ? terrain.stream.rockEntries() : [];
-const { colliders, zones, interactables } = loadLevel({ ...level, structures: [...level.structures, ...streamRocks] }, { scene, terrain, materials });
+const { colliders, zones, interactables, interiors: interiorGroups } = loadLevel({ ...level, structures: [...level.structures, ...streamRocks] }, { scene, terrain, materials });
 const streamWater = terrain.stream ? new StreamWater(terrain.stream, textures.noise) : null;
 if (streamWater) scene.add(streamWater.mesh);
 const vegetation = new Vegetation(level, terrain, colliders, materials.gradientMap);
@@ -83,7 +86,12 @@ scene.add(birds.mesh);
 
 // Objetos interactivos (puertas…): sus colisionadores se suman a los del jugador.
 const interaction = new Interaction({ scene, camera, colliders });
-interaction.load(interactables, { materials });
+const cabinZone = zones.find((zone) => zone.name === 'cabin');
+if (cabinZone) interiorLighting.setZone(cabinZone);
+interaction.load(interactables, { materials, interiorLighting });
+const interiors = new Interiors(interiorGroups);
+interiors.track(interaction.items);
+let indoor = 0;
 
 const inventory = new Inventory();
 const torch = new Torch();
@@ -155,7 +163,11 @@ const loop = new GameLoop(renderer, {
     const day = dayCycle.state;
     sky.update(dt, camera, day);
     vegetation.update(dt);
-    lighting.update(player.position, camera, day);
+    const zone = zoneAt(zones, player.position);
+    indoor += ((zone ? 1 : 0) - indoor) * Math.min(1, dt * 3);
+    lighting.update(player.position, camera, day, indoor);
+    interiorLighting.update(day);
+    interiors.update(player.position);
     scene.fog.color.copy(day.horizon);
     torch.update(dt, { active: inventory.activeItem?.id === 'torch', player, camera, day });
     streamWater?.update(dt, day);
@@ -172,7 +184,7 @@ const loop = new GameLoop(renderer, {
       clock: `${dayCycle.clock} ${day.phase}`,
       birds: `${birds.visibleCount} (${birds.perchedCount} posados)`,
       surface: player.surface,
-      zone: zoneAt(zones, player.position)?.name ?? 'exterior',
+      zone: zone?.name ?? 'exterior',
       target: interaction.target ? `${interaction.target.name} (${interaction.target.prompt()})` : '-',
       water: audio.water ? `${audio.water.distance.toFixed(1)} m vol ${audio.water.volume.toFixed(2)}` : '-',
     });

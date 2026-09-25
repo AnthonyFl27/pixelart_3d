@@ -53,11 +53,3 @@ export function plankUVs(geometry, random, vertical = false) {
   }
   return geometry;
 }
-
-// Todas las UVs sobre la junta oscura de la textura `planks` (color liso: herrajes).
-export function seamUVs(geometry) {
-  const { size } = CONFIG.textures;
-  const uv = geometry.attributes.uv;
-  for (let i = 0; i < uv.count; i++) uv.setXY(i, 0.5 / size, 1 - 0.5 / size);
-  return geometry;
-}

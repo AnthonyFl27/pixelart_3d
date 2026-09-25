@@ -41,7 +41,8 @@ export class Lighting {
     this.center = new THREE.Vector3();
   }
 
-  update(focus, camera, day) {
+  // indoor: 0-1, el jugador dentro de una zona interior (la luz de relleno se atenúa).
+  update(focus, camera, day, indoor = 0) {
     this.hemi.color.copy(day.ambientSky);
     this.hemi.groundColor.copy(day.ambientGround);
     this.hemi.intensity = day.ambientIntensity;
@@ -68,7 +69,7 @@ export class Lighting {
 
     // Relleno: desde detrás de la cámara, ligeramente a la derecha y elevado.
     this.fill.color.copy(day.fill);
-    this.fill.intensity = day.fillIntensity;
+    this.fill.intensity = day.fillIntensity * THREE.MathUtils.lerp(1, CONFIG.interior.indoorCameraFill, indoor);
     const { fillElevation, fillSideOffset } = CONFIG.lighting;
     camera.getWorldDirection(this.viewDirection);
     const dx = -this.viewDirection.x;

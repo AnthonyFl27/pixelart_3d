@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { CONFIG } from '../config.js';
+import { createRandom, deriveSeed } from '../core/noise.js';
 import { applyBoxUVs, extrudeAcross, plankUVs } from './geometryUtils.js';
+import { buildFurniture } from './furniture.js';
 
 // Carcasa de la cabaña de madera (spec v3, 4.5): paredes de tablas con huecos de puerta y
 // ventanas, tejado a dos aguas con tablillas, chapas y un agujero, porche con techo,
@@ -61,6 +63,21 @@ function subtractIntervals(from, to, blocked) {
   return free.filter(([a, b]) => b - a > 1e-3);
 }
 
+// Rectángulos que cubren [a, b] × [y0, y1] sin los huecos { x0, x1, y0, y1 }:
+// [[x0, x1, y0, y1], ...] por franjas verticales entre los bordes de los huecos.
+function rectanglesAround(a, b, y0, y1, holes) {
+  const xs = [a, b, ...holes.flatMap((h) => [h.x0, h.x1]).filter((x) => x > a && x < b)].sort((p, q) => p - q);
+  const rects = [];
+  for (let i = 0; i < xs.length - 1; i++) {
+    const [p, q] = [xs[i], xs[i + 1]];
+    if (q - p < 1e-3) continue;
+    const mid = (p + q) / 2;
+    const blocked = holes.filter((h) => h.x0 < mid && h.x1 > mid).map((h) => [h.y0, h.y1]);
+    for (const [r0, r1] of subtractIntervals(y0, y1, blocked)) rects.push([p, q, r0, r1]);
+  }
+  return rects;
+}
+
 class CabinBuilder {
   constructor(config, random, ground) {
     const c = config;
@@ -102,17 +119,26 @@ class CabinBuilder {
     return min + this.random() * (max - min);
   }
 
-  add(material, geometry) {
+  // Pieza en el marco actual. Dentro de buildInterior las piezas son `interior`.
+  add(material, geometry, color) {
     if (this.frame) geometry.applyMatrix4(this.frame);
-    this.pieces.push({ geometry, position: [0, 0, 0], material, collider: false });
+    this.pieces.push({ geometry, position: [0, 0, 0], material, collider: false, color, interior: this.interior });
   }
 
   // Caja alineada con los ejes del marco actual, de `min` a `max`.
-  box(material, min, max, uvs = applyBoxUVs) {
+  box(material, min, max, uvs = applyBoxUVs, color) {
     const geometry = new THREE.BoxGeometry(max[0] - min[0], max[1] - min[1], max[2] - min[2]);
     uvs(geometry);
     geometry.translate((min[0] + max[0]) / 2, (min[1] + max[1]) / 2, (min[2] + max[2]) / 2);
-    this.add(material, geometry);
+    this.add(material, geometry, color);
+  }
+
+  // Caja con UVs en el marco actual (textura continua entre cajas vecinas: paneles).
+  panel(material, min, max, color) {
+    const geometry = new THREE.BoxGeometry(max[0] - min[0], max[1] - min[1], max[2] - min[2]);
+    geometry.translate((min[0] + max[0]) / 2, (min[1] + max[1]) / 2, (min[2] + max[2]) / 2);
+    applyBoxUVs(geometry);
+    this.add(material, geometry, color);
   }
 
   // Colisionador en el marco actual (solo marcos con giros de 90°).
@@ -134,6 +160,7 @@ class CabinBuilder {
     for (const stairs of this.backStairs) this.buildStairs(stairs);
     this.buildChimney();
     this.buildFoundation();
+    if (this.c.layout) this.buildInterior(this.c.layout);
     this.frame = null;
 
     const pieces = [
@@ -207,6 +234,7 @@ class CabinBuilder {
     const { W, D, H, c } = this;
     const snap = (y) => Math.round(y / this.rowHeight) * this.rowHeight;
     const openings = Object.fromEntries(WALLS.map((wall) => [wall, []]));
+    this.openings = openings;
     for (const door of c.doors) openings[door.wall].push({ ...door, bottom: 0, top: snap(door.height), door: true });
     for (const window of c.windows) openings[window.wall].push({ ...window, bottom: snap(window.bottom), top: snap(window.top) });
 
@@ -662,6 +690,165 @@ class CabinBuilder {
       surface: 'wood',
       collider: [{ min: [0, end - 0.6, -width / 2], max: [run, porchTop, width / 2], rise: end - porchTop }],
     });
+  }
+
+  // --- Interior (spec v3, 4.6) -------------------------------------------------
+
+  buildInterior(layout) {
+    this.interior = true;
+    this.buildFloorBoards();
+    this.buildPartition(layout.partition);
+    for (const room of layout.rooms) this.buildLining(room);
+    this.buildLoft(layout.loft);
+    this.buildPurlins();
+    layout.furniture.forEach((entry, index) => this.buildFurnitureEntry(entry, index));
+    this.interior = false;
+    this.buildStovePipe(layout.stovePipe);
+  }
+
+  // Tablones del suelo a lo largo de X con juntas al tresbolillo.
+  buildFloorBoards() {
+    const { W, D, c } = this;
+    const width = this.rowHeight;
+    for (let z = -D / 2 + 0.05; z < D / 2 - 0.05 - 1e-3; z += width) {
+      const z1 = Math.min(z + width, D / 2 - 0.05);
+      let x = -W / 2 + 0.05;
+      while (x < W / 2 - 0.05 - 1e-3) {
+        const length = Math.min(this.range(c.boardLength), W / 2 - 0.05 - x);
+        const geometry = plankUVs(new THREE.BoxGeometry(length - 0.004, 0.012, z1 - z - 0.004), this.random);
+        geometry.translate(x + length / 2, 0.006, (z + z1) / 2);
+        this.add('planks', geometry, c.floorColor);
+        x += length;
+      }
+    }
+  }
+
+  // Tabique de tablas con un vano sin puerta (y marco).
+  buildPartition({ x, thickness, opening }) {
+    const { D, H, c } = this;
+    const x0 = x - thickness / 2;
+    const x1 = x + thickness / 2;
+    const z0 = opening.z - opening.width / 2;
+    const z1 = opening.z + opening.width / 2;
+    for (const [a, b] of [[-D / 2 + 0.06, z0], [z1, D / 2 - 0.06]]) {
+      this.panel('planks', [x0, 0, a], [x1, H, b], c.partitionColor);
+      this.collide([x0, 0, a], [x1, H, b]);
+    }
+    this.panel('planks', [x0, opening.height, z0], [x1, H, z1], c.partitionColor);
+    this.collide([x0, opening.height, z0], [x1, H, z1]);
+    const trim = c.trimWidth;
+    for (const side of [-1, 1]) {
+      const face = side < 0 ? x0 - 0.02 : x1;
+      this.box('wood', [face, 0, z0 - trim], [face + 0.02, opening.height + trim, z0], verticalUVs);
+      this.box('wood', [face, 0, z1], [face + 0.02, opening.height + trim, z1 + trim], verticalUVs);
+      this.box('wood', [face, opening.height, z0], [face + 0.02, opening.height + trim, z1]);
+    }
+  }
+
+  // Revestimiento de las paredes de una estancia: papel pintado con friso de tablas o
+  // tablas claras, recortado alrededor de puertas y ventanas.
+  buildLining(room) {
+    const { W, D, H, c } = this;
+    const inner = -c.boardThickness - 0.01;
+    const depth = 0.02;
+    const margin = 0.06;
+    const partitionGap = CONFIG.cabin.liningPartitionGap;
+    const clip = (a, b, min, max) => [Math.max(a, min), Math.min(b, max)];
+    const spans = [];
+    const [fx0, fx1] = clip(room.x0 + (room.x0 > -W / 2 ? partitionGap : margin), room.x1 - (room.x1 < W / 2 ? partitionGap : margin), -W / 2, W / 2);
+    spans.push(['front', fx0, fx1], ['back', -fx1, -fx0]);
+    if (room.x0 <= -W / 2) spans.push(['left', -D / 2 + margin, D / 2 - margin]);
+    if (room.x1 >= W / 2) spans.push(['right', -D / 2 + margin, D / 2 - margin]);
+
+    for (const [wall, a, b] of spans) {
+      if (b - a < 0.05) continue;
+      this.frame = wallMatrix(wall, W, D);
+      const holes = this.openings[wall].map((o) => ({ x0: o.x - o.width / 2, x1: o.x + o.width / 2, y0: o.bottom, y1: o.top }));
+      const bands = room.wainscot
+        ? [[0, room.wainscot, 'planks', room.wainscotColor], [room.wainscot, H, room.lining, room.color]]
+        : [[0, H, room.lining, room.color]];
+      for (const [y0, y1, material, color] of bands) {
+        for (const [x0, x1, r0, r1] of rectanglesAround(a, b, y0, y1, holes)) {
+          this.panel(material, [x0, r0, inner - depth], [x1, r1, inner], color);
+        }
+      }
+      if (room.wainscot) {
+        for (const [x0, x1, r0, r1] of rectanglesAround(a, b, room.wainscot - 0.02, room.wainscot + 0.04, holes)) {
+          this.box('wood', [x0, r0, inner - depth - 0.025], [x1, r1, inner - depth], applyBoxUVs, room.wainscotColor);
+        }
+      }
+    }
+    this.frame = null;
+  }
+
+  // Altillo: tablas sobre viguetas a la altura de las paredes.
+  buildLoft({ x0, x1 }) {
+    const { D, H } = this;
+    const count = Math.max(2, Math.round((x1 - x0) / 1.2));
+    for (let i = 0; i <= count; i++) {
+      const x = x0 + 0.06 + (i / count) * (x1 - x0 - 0.12);
+      this.box('wood', [x - 0.04, H - 0.14, -D / 2 + 0.05], [x + 0.04, H, D / 2 - 0.05]);
+    }
+    this.panel('planks', [x0, H, -D / 2 + 0.05], [x1 - 0.05, H + 0.03, D / 2 - 0.05], this.c.partitionColor);
+  }
+
+  // Correas: vigas a lo largo de la cabaña bajo los cabios, a media pendiente.
+  buildPurlins() {
+    const { W, D, R, alpha } = this;
+    const at = (D / 2 / Math.cos(alpha)) * 0.55;
+    for (const side of [1, -1]) {
+      this.frame = slopeMatrix(side, alpha, R, 0);
+      this.box('wood', [-W / 2 + 0.05, -0.14, at - 0.06], [W / 2 - 0.05, 0, at + 0.06]);
+    }
+    this.frame = null;
+  }
+
+  // Mueble del plano: piezas interiores en el marco del mueble, colisionador propio y
+  // sus interactivos (con la caja de apuntado relativa a su posición).
+  buildFurnitureEntry(entry, index) {
+    const random = createRandom(deriveSeed(CONFIG.seed, `furniture-${index}`));
+    const rotation = entry.rotationY ?? 0;
+    const origin = [entry.x, entry.y ?? 0, entry.z];
+    const matrix = new THREE.Matrix4().makeRotationY(rotation).setPosition(...origin);
+    const parts = [];
+    const boxes = [];
+    const items = [];
+    buildFurniture(entry, random, {
+      add: (layer, geometry, color) => parts.push({ layer, geometry, color }),
+      collider: (min, max) => boxes.push({ min, max }),
+      interactable: (data) => items.push(data),
+    });
+    this.frame = matrix;
+    for (const part of parts) this.add(part.layer, part.geometry, part.color);
+    this.frame = null;
+    if (boxes.length) {
+      this.pieces.push({ geometry: null, position: origin, rotationY: rotation, collider: boxes, surface: entry.surface ?? 'wood' });
+    }
+    for (const item of items) {
+      const local = new THREE.Vector3(...item.position);
+      const hit = item.hit ?? { min: [-0.1, -0.1, -0.1], max: [0.1, 0.1, 0.1] };
+      this.interactables.push({
+        ...item,
+        position: local.clone().applyMatrix4(matrix).toArray(),
+        rotationY: rotation,
+        zone: 'cabin',
+        hitSize: hit.max.map((v, i) => v - hit.min[i]),
+        hitOffset: hit.max.map((v, i) => (v + hit.min[i]) / 2 - local.getComponent(i)),
+      });
+    }
+  }
+
+  // Tubo de la cocina de leña desde el altillo hasta encima del tejado (visible fuera).
+  buildStovePipe({ x, z, radius, above }) {
+    const top = this.roofTop - Math.abs(z) * Math.tan(this.alpha) + above;
+    const pipe = new THREE.CylinderGeometry(radius, radius, top - this.H, 7, 1);
+    applyBoxUVs(pipe);
+    pipe.translate(x, (top + this.H) / 2, z);
+    this.add('iron', pipe, 0x6a6a6a);
+    const cap = new THREE.CylinderGeometry(radius * 1.8, radius * 1.3, 0.08, 7, 1);
+    applyBoxUVs(cap);
+    cap.translate(x, top + 0.05, z);
+    this.add('iron', cap, 0x6a6a6a);
   }
 
   // --- Chimenea ----------------------------------------------------------------

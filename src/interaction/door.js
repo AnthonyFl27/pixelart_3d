@@ -2,8 +2,10 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { CONFIG } from '../config.js';
 import { createRandom, deriveSeed } from '../core/noise.js';
-import { plankUVs, seamUVs } from '../world/geometryUtils.js';
+import { applyBoxUVs, plankUVs } from '../world/geometryUtils.js';
+import { paintGeometry } from '../world/materials.js';
 import { circleOverlapsBox } from '../player/collision.js';
+import { createHitBox } from './hitBox.js';
 
 // Puerta con bisagra: hoja de tablones con travesaños y herrajes que gira con una
 // animación suavizada. Su colisionador sigue la rotación; no empieza a moverse (ni sigue)
@@ -30,13 +32,11 @@ export class Door {
     this.object.position.fromArray(data.position);
     this.object.rotation.y = this.baseRotation;
     const random = createRandom(deriveSeed(CONFIG.seed, this.object.name));
-    this.mesh = new THREE.Mesh(createDoorGeometry(this.width, this.height, this.side, random), materials.planks);
+    this.mesh = new THREE.Mesh(createDoorGeometry(this.width, this.height, this.side, random), materials.layered);
     this.mesh.castShadow = true;
     this.mesh.receiveShadow = true;
     // Caja invisible que recibe el rayo de interacción (sin huecos entre tablas).
-    this.hitBox = new THREE.Mesh(new THREE.BoxGeometry(this.width, this.height, d.thickness), this.mesh.material);
-    this.hitBox.geometry.translate(this.side * this.width / 2, this.height / 2, 0);
-    this.hitBox.visible = false;
+    this.hitBox = createHitBox([this.width, this.height, d.thickness], [this.side * this.width / 2, this.height / 2, 0]);
     this.object.add(this.mesh, this.hitBox);
     this.meshes = [this.hitBox];
 
@@ -135,14 +135,15 @@ function createDoorGeometry(width, height, side, random) {
   const d = CONFIG.door;
   const t = d.thickness;
   const parts = [];
-  const box = (sx, sy, sz, x, y, z, uvs) => {
-    const geometry = uvs(new THREE.BoxGeometry(sx, sy, sz));
+  const box = (sx, sy, sz, x, y, z, uvs, layer = 'planks') => {
+    const geometry = paintGeometry(uvs(new THREE.BoxGeometry(sx, sy, sz)), layer);
     geometry.translate(side * x, y, z);
     parts.push(geometry);
     return geometry;
   };
   const plank = (g) => plankUVs(g, random, true);
   const batten = (g) => plankUVs(g, random);
+  const iron = (sx, sy, sz, x, y, z) => box(sx, sy, sz, x, y, z, applyBoxUVs, 'iron');
 
   const boardWidth = width / d.boards;
   for (let i = 0; i < d.boards; i++) {
@@ -157,19 +158,19 @@ function createDoorGeometry(width, height, side, random) {
     const y1 = battens[k + 1] - d.battenHeight / 2;
     const run = width - 0.2;
     const length = Math.hypot(run, y1 - y0);
-    const brace = batten(new THREE.BoxGeometry(length, d.battenHeight * 0.9, 0.03));
+    const brace = paintGeometry(batten(new THREE.BoxGeometry(length, d.battenHeight * 0.9, 0.03)), 'planks');
     brace.rotateZ(-side * Math.atan2(y1 - y0, run));
     brace.translate(side * width / 2, (y0 + y1) / 2, inside);
     parts.push(brace);
   }
 
   // Herrajes: bisagras de cinta por fuera y tirador (anilla por fuera, pestillo por dentro).
-  for (const y of [0.3, height - 0.3]) box(0.42, 0.05, 0.012, 0.21, y, t / 2 + 0.006, seamUVs);
+  for (const y of [0.3, height - 0.3]) iron(0.42, 0.05, 0.012, 0.21, y, t / 2 + 0.006);
   const handleX = width - 0.12;
-  box(0.035, 0.2, 0.035, handleX, d.handleHeight, t / 2 + 0.04, seamUVs);
-  box(0.03, 0.03, 0.04, handleX, d.handleHeight + 0.09, t / 2 + 0.02, seamUVs);
-  box(0.03, 0.03, 0.04, handleX, d.handleHeight - 0.09, t / 2 + 0.02, seamUVs);
-  box(0.22, 0.03, 0.03, handleX - 0.08, d.handleHeight, inside - 0.02, seamUVs);
+  iron(0.035, 0.2, 0.035, handleX, d.handleHeight, t / 2 + 0.04);
+  iron(0.03, 0.03, 0.04, handleX, d.handleHeight + 0.09, t / 2 + 0.02);
+  iron(0.03, 0.03, 0.04, handleX, d.handleHeight - 0.09, t / 2 + 0.02);
+  iron(0.22, 0.03, 0.03, handleX - 0.08, d.handleHeight, inside - 0.02);
 
   const geometry = mergeGeometries(parts);
   parts.forEach((part) => part.dispose());

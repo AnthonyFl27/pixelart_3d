@@ -5,13 +5,15 @@ import { applyBoxUVs, extrudeAcross } from './geometryUtils.js';
 import { createBoxCollider } from '../player/collision.js';
 import { createCabin } from './cabin.js';
 import { createZone } from './zones.js';
+import { resolveMaterial, paintGeometry } from './materials.js';
 
 // Fábrica de estructuras. Cada tipo recibe los parámetros de su entrada de nivel, un
 // generador aleatorio y un contexto { ground(lx, lz) -> altura del terreno en un punto local },
 // y devuelve piezas (o { pieces, baseY } para fijar la altura del origen de la estructura):
 //   { geometry, position: [x, y, z], rotationY?, material?: 'stone' | 'wetStone' | 'bark' | 'leaves' | …,
 //     collider?: boolean (true) | [{ min: [x, y, z], max: [x, y, z], rise? }],
-//     surface?: 'stone' | 'wood', groundAt?: [x, z] }
+//     surface?: 'stone' | 'wood', groundAt?: [x, z], color?: tinte (materiales por capas),
+//     interior?: true (se fusiona aparte y se oculta desde lejos) }
 // `groundAt` apoya la pieza en el terreno medido en ese punto local (piezas sueltas
 // o árboles de un bosquecillo sobre terreno irregular). Un `collider` con cajas explícitas
 // sustituye al bounding box (p. ej. arcos por los que se puede pasar); `rise` inclina la
@@ -302,8 +304,8 @@ export function createStructure(entry, index, { terrain, materials }) {
   const pieces = list.map((piece) => {
     let mesh;
     if (piece.geometry) {
-      const material = materials[piece.material ?? 'stone'];
-      if (!material) throw new Error(`Material desconocido: "${piece.material}"`);
+      const { material, layer } = resolveMaterial(materials, piece.material ?? 'stone');
+      if (layer !== null) paintGeometry(piece.geometry, piece.material, piece.color);
       mesh = new THREE.Mesh(piece.geometry, material);
       mesh.castShadow = true;
       mesh.receiveShadow = true;

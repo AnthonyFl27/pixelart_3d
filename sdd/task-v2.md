@@ -68,23 +68,23 @@ Leyenda: `[ ]` pendiente · `[x]` completada · `[~]` en progreso
 - [~] (Opcional) Puerta trasera de la cocina y puertas de armarios — puerta trasera hecha; armarios con los muebles (fase 19)
 
 ## Fase 19 — Interior, mobiliario, asientos y lámpara
-- [ ] Suelo de tablones, paredes interiores, tabique con vano y vigas del techo
-- [ ] `furniture.js`: fábrica de muebles
-- [ ] Sala: sofá, sillón, mesa baja, alfombra, chimenea, estantería, cuadros, mueble de la tele
-- [ ] Cocina: cocina de leña, encimera con fregadero y bomba, armarios, estantes, mesa, sillas, nevera, sartenes
-- [ ] `levels/cabinLayout.js` con la distribución y los interactivos como datos
-- [ ] Luz de relleno interior que sigue al día
-- [ ] `lamp.js`: lámpara de aceite que se enciende y apaga
-- [ ] `seat.js`: sentarse con transición de cámara, giro limitado y levantarse
-- [ ] Alcance de interacción configurable estando sentado
-- [ ] Ocultar el interior cuando el jugador está fuera y lejos
+- [x] Suelo de tablones, paredes interiores, tabique con vano y vigas del techo
+- [x] `furniture.js`: fábrica de muebles
+- [x] Sala: sofá, sillón, mesa baja, alfombra, chimenea, estantería, cuadros, mueble de la tele
+- [x] Cocina: cocina de leña, encimera con fregadero y bomba, armarios, estantes, mesa, sillas, nevera, sartenes
+- [x] `levels/cabinLayout.js` con la distribución y los interactivos como datos
+- [x] Luz de relleno interior que sigue al día
+- [x] `lamp.js`: lámpara de aceite que se enciende y apaga
+- [x] `seat.js`: sentarse con transición de cámara, giro limitado y levantarse
+- [x] Alcance de interacción configurable estando sentado
+- [x] Ocultar el interior cuando el jugador está fuera y lejos
 
 ## Fase 20 — Televisor
-- [ ] Modelo CRT con antena de cuernos y pantalla curvada
-- [ ] Textura de canvas `NO SIGNAL` con barrido, ruido y parpadeo
-- [ ] Animación de encendido (línea que se expande) y apagado (línea y punto)
-- [ ] Luz fría de la pantalla (siempre presente, intensidad 0 apagada)
-- [ ] Sonidos: clic, zumbido de tubo y estática con posición en el espacio
+- [x] Modelo CRT con antena de cuernos y pantalla curvada
+- [x] Textura de canvas `NO SIGNAL` con barrido, ruido y parpadeo
+- [x] Animación de encendido (línea que se expande) y apagado (línea y punto)
+- [x] Luz fría de la pantalla (siempre presente, intensidad 0 apagada)
+- [x] Sonidos: clic, zumbido de tubo y estática con posición en el espacio
 
 ## Fase 21 — Objetos recogibles, pilas y munición
 - [ ] `pickup.js`: objetos del mundo que pasan a la primera ranura libre

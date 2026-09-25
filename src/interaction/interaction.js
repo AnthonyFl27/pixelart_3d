@@ -2,6 +2,9 @@ import * as THREE from 'three';
 import { CONFIG } from '../config.js';
 import { rayBoxDistance } from '../player/collision.js';
 import { Door } from './door.js';
+import { Seat } from './seat.js';
+import { Lamp } from './lamp.js';
+import { Television } from './television.js';
 
 // Sistema de interacción genérico. Cada objeto interactivo expone:
 //   { meshes: Object3D[] (lo que apunta el rayo), object?: Object3D (se añade a la escena),
@@ -12,6 +15,9 @@ import { Door } from './door.js';
 
 export const INTERACTABLE_TYPES = {
   door: (data, context) => new Door(data, context),
+  seat: (data) => new Seat(data),
+  lamp: (data, context) => new Lamp(data, context),
+  television: (data, context) => new Television(data, context),
 };
 
 const SCREEN_CENTER = new THREE.Vector2(0, 0);
@@ -47,18 +53,25 @@ export class Interaction {
   }
 
   // context: { player, audio, ... }. Devuelve el texto del aviso o null.
+  // Sentado, el alcance es mayor y `E` sin objeto apuntado levanta al jugador.
   update(dt, input, context) {
     for (const item of this.items) item.update?.(dt, context);
-    this.target = this.findTarget();
-    if (!this.target) return null;
-    if (input.wasPressed(CONFIG.interaction.key)) this.target.interact(context);
+    const { player } = context;
+    const { reach, seatedReach, key } = CONFIG.interaction;
+    this.target = this.findTarget(player?.seat ? seatedReach : reach);
+    const pressed = input.wasPressed(key);
+    if (!this.target) {
+      if (pressed && player?.seat) player.standUp();
+      return null;
+    }
+    if (pressed) this.target.interact(context);
     return this.target.prompt(context);
   }
 
   // Objeto interactivo en el centro de la pantalla dentro del alcance, si ningún
   // colisionador (paredes, muebles) se interpone.
-  findTarget() {
-    const { reach, occlusionMargin } = CONFIG.interaction;
+  findTarget(reach) {
+    const { occlusionMargin } = CONFIG.interaction;
     this.raycaster.setFromCamera(SCREEN_CENTER, this.camera);
     this.raycaster.far = reach;
     const hit = this.raycaster.intersectObjects(this.meshes, false)[0];

@@ -1,3 +1,5 @@
+import { CABIN_LAYOUT } from './cabinLayout.js';
+
 // Nivel "Pradera de piedras": círculo de trilitos al estilo Stonehenge.
 // Todo es dato: para añadir una estructura basta con añadir una entrada.
 //
@@ -200,7 +202,7 @@ export const MEADOW = {
 
     // Zona del riachuelo: puente de dos arcos (cruza de este a oeste) y entorno de la cabaña.
     { type: 'archBridge', x: -61, z: 12, rotationY: 0, arches: 2, span: 2.6, pier: 0.9 },
-    { type: 'cabin', x: -81.5, z: 10, rotationY: 1.5708 }, // porche hacia el este (el puente)
+    { type: 'cabin', x: -81.5, z: 10, rotationY: 1.5708, layout: CABIN_LAYOUT }, // porche hacia el este (el puente)
     { type: 'tree', x: -71, z: 24, height: 8, crownRadius: 3.2, lobes: 7, autumn: true },
     { type: 'tree', x: -91, z: 3, height: 9 },
     { type: 'tree', x: -89, z: 25, height: 7.5 },
