@@ -55,7 +55,9 @@ pixelart_3d/
 │   │   ├── textures.js         # Texturas procedurales (piedra, césped, tierra, corteza, hojas, musgo, ruido)
 │   │   ├── materials.js        # Materiales toon por bandas + musgo en la piedra
 │   │   ├── geometryUtils.js    # UVs de densidad constante
-│   │   ├── terrain.js          # Terreno, getHeight(x, z) y camino de tierra (shader)
+│   │   ├── terrain.js          # Terreno por trozos de resolución variable, getHeight(x, z) y suelo (shader)
+│   │   ├── terrainFeatures.js  # Relieve: ruido por capas, hundimientos, montículos, surcos, caminos
+│   │   ├── groundMap.js        # Mapa de suelo (tierra, barro, grava) y getSurface
 │   │   ├── dayCycle.js         # Reloj del mundo: hora, fase, sol/luna y colores por keyframes
 │   │   ├── sky.js              # Cúpula de cielo: degradado, nubes, sol, luna y estrellas
 │   │   ├── lighting.js         # Sol/luna con sombras, ambiente y luz de relleno según la hora
@@ -69,7 +71,7 @@ pixelart_3d/
 │   │   ├── inventory.js        # Ranuras, selección y catálogo de objetos
 │   │   └── torch.js            # Antorcha en primera persona: llama, chispas y luz
 │   ├── fauna/birds.js          # Pájaros: bandadas, posado, actividad según la hora
-│   ├── levels/meadow.js        # Nivel como datos (spawn, camino, estructuras)
+│   ├── levels/meadow.js        # Nivel como datos (spawn, caminos, relieve, estructuras)
 │   ├── ui/                     # overlay.js (inicio/pausa), hud.js (F3), hotbar.js, ui.css
 │   └── audio/
 │       ├── ambient.js          # Viento, trinos y bus maestro (Web Audio)
@@ -93,6 +95,8 @@ pixelart_3d/
 - **Nuevo objeto de inventario:** añadirlo a `ITEMS` en `src/items/inventory.js` (con icono 16x16)
   y su comportamiento en `main.js` según `inventory.activeItem`.
 - **Hora del día:** keyframes de color y luz en `CONFIG.dayCycle.keyframes`; duración en `dayLength`.
+- **Relieve:** añadir entradas a `terrainFeatures` en el nivel (`hollow`, `mound`, `ridge`, `gully`, `dirtPile`,
+  `dirtPatch`); nuevos tipos en `FEATURE_TYPES` de `src/world/terrainFeatures.js`.
 - **Nuevo nivel:** crear `src/levels/<nombre>.js` con la misma forma que `MEADOW` e importarlo en `main.js`.
 - **Aspecto visual:** paleta, resolución pixel, luz, niebla, nubes y post-proceso en `src/config.js`.
 

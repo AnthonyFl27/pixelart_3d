@@ -216,6 +216,22 @@ export const CONFIG = {
       speckleLight: 0.06,
       speckleDark: 0.08,
     },
+    mud: {
+      colors: [0x3e3022, 0x4a3a28, 0x584630, 0x66523a],
+      frequency: 3,
+      octaves: 3,
+      blotchWeight: 0.65,
+      speckleLight: 0.03,
+      speckleDark: 0.05,
+    },
+    gravel: {
+      colors: [0x5f5a52, 0x767064, 0x8a8475, 0x9f9888, 0xb4ad9c],
+      frequency: 8,
+      octaves: 2,
+      blotchWeight: 0.3,
+      speckleLight: 0.08,
+      speckleDark: 0.1,
+    },
     moss: {
       colors: [0x3d5a1e, 0x4f6e24, 0x62802c, 0x7a9636],
       frequency: 4,
@@ -234,17 +250,64 @@ export const CONFIG = {
 
   terrain: {
     size: 400,
-    segments: 160,
-    heightAmplitude: 1.8,  // altura máxima de las ondulaciones (u)
+    // Trozos de malla con resolución propia; las regiones agrupan trozos en una malla.
+    chunkSize: 10,
+    regionSize: 100,
+    // Tamaño de celda (u) según el detalle que necesita cada trozo.
+    cellSizes: { fine: 0.5, mid: 1, base: 2 },
+    normalSample: 0.5,     // paso para la normal analítica (u)
+    heightAmplitude: 3,    // altura máxima de las ondulaciones grandes (u)
     heightFrequency: 0.015,
     octaves: 4,
+    relief: { amplitude: 1.1, frequency: 0.05 }, // lomas medianas (≈ 20 m)
+    // Micro-relieve: dos octavas pequeñas; dentro del centro llano se atenúa.
+    micro: { amplitude: 0.2, frequency: 0.22, fineAmplitude: 0.07, fineFrequency: 0.6, insideFlat: 0.55 },
     flatRadius: 24,        // radio llano alrededor del centro del nivel
     flatBlend: 30,         // transición de llano a ondulado
+    featureGrid: 20,       // tamaño de los cubos de búsqueda de modificadores (u)
+    irregularity: 0.3,     // deformación del contorno de hundimientos y montículos (0-1)
+    irregularityScale: 0.35,
+    hollowGround: 0.55,    // fracción del radio de un hundimiento con fondo de tierra/barro
+    gullyGround: 0.4,      // fracción del ancho de un surco con fondo de grava
+    // Tierra acumulada al pie de las piedras: radio y altura por tipo (boulder: × radio).
+    structureDirt: {
+      trilithon: { radius: 3.4, height: 0.22, amount: 0.8 },
+      pillar: { radius: 1.8, height: 0.18, amount: 0.8 },
+      fallenStone: { radius: 2.4, height: 0.16, amount: 0.7 },
+      boulder: { radius: 2, height: 0.2, amount: 0.8, scaleByRadius: true },
+      outcrop: { radius: 1.3, height: 0.15, amount: 0.7, scaleByRadius: true },
+    },
+    // Capa procedural de relieve repartida por el mapa.
+    scatter: {
+      areaRadius: 175,
+      centerClearance: 30, // distancia mínima al centro del nivel
+      pathClearance: 3,    // distancia mínima a los caminos
+      hollows: 34,
+      hollowRadius: [2.5, 8],
+      hollowDepth: [0.3, 1.3],
+      muddyHollowChance: 0.35,
+      mounds: 22,
+      moundRadius: [5, 12],
+      moundHeight: [1, 2.8],
+      dirtPatches: 26,
+      dirtPatchRadius: [1, 3],
+      gravelPatchChance: 0.3,
+    },
   },
 
-  path: {
+  // Mapa de suelo (src/world/groundMap.js): tierra, barro y grava sobre el césped.
+  groundMap: {
+    resolution: 2,         // píxeles por unidad de mundo
+    range: 2,              // distancia (u) en la que el peso pasa de 1 a 0 alrededor del borde
     edgeNoise: 1.1,        // irregularidad del borde (u)
     edgeNoiseScale: 0.18,  // frecuencia del ruido del borde
+  },
+
+  // Caminos: hundidos por el paso con un reborde de tierra acumulada.
+  paths: {
+    sink: 0.1,
+    berm: 0.08,
+    bermWidth: 0.7,
   },
 
   structures: {
@@ -278,7 +341,7 @@ export const CONFIG = {
     sparseChance: 0.12,    // probabilidad de mata suelta fuera de las manchas
     flowerCount: 700,
     flowerColors: [0xf4f0e0, 0xf2d24a, 0xb58ad8, 0xe86a5a],
-    pathMargin: 0.7,       // distancia mínima al camino (u)
+    bareMargin: 0.7,       // distancia mínima al suelo desnudo: caminos, barro, grava (u)
     windStrength: 0.12,
     windSpeed: 1.6,
   },
@@ -318,6 +381,8 @@ export const CONFIG = {
     runIntensity: 1.25,
     landIntensity: 1.7,
     landMinSpeed: 4,       // velocidad de caída mínima para sonar al aterrizar (u/s)
+    // Superficies sin perfil propio todavía: usan el de otra.
+    aliases: { mud: 'dirt', gravel: 'dirt' },
     surfaces: {
       grass: {
         toeDelay: 0.08,

@@ -30,7 +30,8 @@ export class Footsteps {
 
   // intensity: 1 = andar, >1 = correr o aterrizar.
   play(surface, intensity = 1) {
-    const profile = CONFIG.footsteps.surfaces[surface] ?? CONFIG.footsteps.surfaces.grass;
+    const { surfaces, aliases } = CONFIG.footsteps;
+    const profile = surfaces[surface] ?? surfaces[aliases[surface]] ?? surfaces.grass;
     const now = this.ctx.currentTime + 0.005;
     this.playLayer(profile.heel, now, intensity);
     this.playLayer(profile.toe, now + profile.toeDelay * vary(0.25), intensity * 0.8);

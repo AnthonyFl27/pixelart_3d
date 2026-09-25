@@ -11,17 +11,17 @@ Leyenda: `[ ]` pendiente · `[x]` completada · `[~]` en progreso
 - [x] Actualizar `AGENTS.md` con la nueva lista de tareas
 
 ## Fase 14 — Relieve del terreno y mapa de suelo
-- [ ] `terrainFeatures.js`: modificadores `hollow`, `mound`, `ridge`, `gully` y `dirtPile` como datos
-- [ ] Capa procedural con semilla: micro-relieve, hundimientos y montículos repartidos
-- [ ] Función de altura única (base + micro-relieve + modificadores) usada por la malla y `getHeight`
-- [ ] Terreno por trozos con celdas ≤ 1 m en zonas de detalle, sin grietas entre trozos
-- [ ] Círculo de piedras con irregularidades ≤ 0,3 m
-- [ ] `groundMap.js`: mapa de suelo césped/tierra/barro/grava y muestreo en el shader del terreno
-- [ ] Varios caminos (`paths`) sin límite de puntos
-- [ ] `getSurface` con `grass`, `dirt`, `mud` y `gravel`
-- [ ] `boulder` con `sink` y rocas semienterradas por el mapa
-- [ ] Tierra acumulada al pie de las piedras y a lo largo de los caminos
-- [ ] Añadir `terrainFeatures` a `meadow.js`
+- [x] `terrainFeatures.js`: modificadores `hollow`, `mound`, `ridge`, `gully` y `dirtPile` como datos
+- [x] Capa procedural con semilla: micro-relieve, hundimientos y montículos repartidos
+- [x] Función de altura única (base + micro-relieve + modificadores) usada por la malla y `getHeight`
+- [x] Terreno por trozos con celdas ≤ 1 m en zonas de detalle, sin grietas entre trozos
+- [x] Círculo de piedras con irregularidades ≤ 0,3 m
+- [x] `groundMap.js`: mapa de suelo césped/tierra/barro/grava y muestreo en el shader del terreno
+- [x] Varios caminos (`paths`) sin límite de puntos
+- [x] `getSurface` con `grass`, `dirt`, `mud` y `gravel`
+- [x] `boulder` con `sink` y rocas semienterradas por el mapa
+- [x] Tierra acumulada al pie de las piedras y a lo largo de los caminos
+- [x] Añadir `terrainFeatures` a `meadow.js`
 
 ## Fase 15 — Riachuelo
 - [ ] `stream.js`: polilínea suavizada con ancho y profundidad desde los datos del nivel

@@ -50,10 +50,27 @@ export const STRUCTURE_TYPES = {
     return [{ geometry, position: [0, 0, 0] }];
   },
 
-  // Roca redondeada semienterrada.
+  // Roca redondeada semienterrada. `sink`: fracción del radio enterrada (además del hundimiento común).
   boulder(params, random) {
-    const { radius = 0.8 } = params;
-    return [{ geometry: blobGeometry(radius, random, 0.7, 1), position: [0, 0, 0] }];
+    const { radius = 0.8, sink = 0 } = params;
+    const geometry = blobGeometry(radius, random, 0.7, 1);
+    geometry.translate(0, -sink * radius, 0);
+    return [{ geometry, position: [0, 0, 0] }];
+  },
+
+  // Afloramiento rocoso: rocas semienterradas agrupadas, cada una apoyada en el terreno.
+  outcrop(params, random) {
+    const { radius = 3, count = 5, minSize = 0.5, maxSize = 1.4, sink = 0.35 } = params;
+    return Array.from({ length: count }, (_, i) => {
+      const angle = random() * Math.PI * 2;
+      const distance = i === 0 ? 0 : (0.35 + random() * 0.65) * radius;
+      const x = Math.cos(angle) * distance;
+      const z = Math.sin(angle) * distance;
+      const size = i === 0 ? maxSize : minSize + random() * (maxSize - minSize);
+      const geometry = blobGeometry(size, random, 0.55 + random() * 0.3, 1);
+      geometry.translate(0, -sink * size, 0);
+      return { geometry, position: [x, 0, z], rotationY: random() * Math.PI * 2, groundAt: [x, z] };
+    });
   },
 
   // Piedras pequeñas y escombros dispersos en un círculo (sin colisión).

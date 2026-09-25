@@ -86,7 +86,7 @@ export class Vegetation {
       const n = this.clusters.fbm(x * v.clusterScale, z * v.clusterScale, { octaves: 3 });
       if (n < v.clusterThreshold && this.random() > v.sparseChance) return null;
     }
-    if (this.terrain.pathDistance(x, z) < v.pathMargin) return null;
+    if (this.terrain.isBareGround(x, z, v.bareMargin)) return null;
     for (const c of this.colliders) {
       const dx = x - c.cx;
       const dz = z - c.cz;

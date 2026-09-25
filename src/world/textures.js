@@ -12,6 +12,8 @@ export function createTextures() {
     dirt: createPaletteTexture('dirt', CONFIG.textures.dirt),
     bark: createPaletteTexture('bark', CONFIG.textures.bark),
     leaves: createPaletteTexture('leaves', CONFIG.textures.leaves),
+    mud: createPaletteTexture('mud', CONFIG.textures.mud),
+    gravel: createPaletteTexture('gravel', CONFIG.textures.gravel),
     moss: createPaletteTexture('moss', CONFIG.textures.moss),
     noise: createNoiseTexture('noise', CONFIG.textures.noise),
   };
