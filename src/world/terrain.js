@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { CONFIG } from '../config.js';
 import { HeightField, createFeatures } from './terrainFeatures.js';
 import { GroundMap } from './groundMap.js';
+import { StreamCourse } from './stream.js';
 
 // Terreno por trozos con resolución variable: celdas finas donde hay detalle
 // (cauce, cabaña), medias en caminos, relieve y centro, y gruesas en el resto.
@@ -9,8 +10,7 @@ import { GroundMap } from './groundMap.js';
 // (sin grietas). Los trozos se agrupan en regiones (una malla y un draw call por
 // región, con frustum culling). `getHeight(x, z)` interpola la triangulación real.
 export class Terrain {
-  // extraFeatures: modificadores añadidos por otros módulos (p. ej. el cauce del riachuelo).
-  constructor(level, materials, textures, extraFeatures = []) {
+  constructor(level, materials, textures) {
     const { size, chunkSize } = CONFIG.terrain;
     this.size = size;
     this.half = size / 2;
@@ -18,8 +18,13 @@ export class Terrain {
     this.chunkCount = Math.round(size / chunkSize);
     this.center = level.center;
 
-    this.features = createFeatures(level, extraFeatures);
+    this.features = createFeatures(level);
     this.heightField = new HeightField(level, this.features);
+    // El cauce se calcula sobre el terreno sin él y después lo recorta.
+    this.stream = level.stream ? new StreamCourse(level.stream, this.heightField, level.clearZones) : null;
+    if (this.stream) {
+      for (const feature of [this.stream.feature, ...this.stream.bankFeatures]) this.heightField.addFeature(feature);
+    }
     this.groundMap = new GroundMap(size, this.features);
 
     this.chunks = this.createChunks();
@@ -163,6 +168,11 @@ export class Terrain {
   // 'grass' | 'dirt' | 'mud' | 'gravel' (sin el ruido del borde).
   getSurface(x, z) {
     return this.groundMap.surfaceAt(x, z);
+  }
+
+  // Nivel del agua en (x, z) o null si no hay agua.
+  waterLevelAt(x, z) {
+    return this.stream?.waterLevelAt(x, z) ?? null;
   }
 
   // true si (x, z) está sobre suelo desnudo o a menos de `margin` de su borde.

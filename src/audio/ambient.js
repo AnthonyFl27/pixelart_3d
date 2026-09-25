@@ -1,7 +1,9 @@
 import { CONFIG } from '../config.js';
 import { Footsteps } from './footsteps.js';
+import { WaterAudio } from './water.js';
 
-// Audio procedural con Web Audio (sin archivos): viento de fondo y pasos (footsteps.js).
+// Audio procedural con Web Audio (sin archivos): viento de fondo, pasos (footsteps.js)
+// y riachuelo (water.js). El oyente sigue a la cámara para las fuentes posicionales.
 // El AudioContext se crea en `start()`, que debe llamarse tras un gesto del usuario.
 export class AmbientAudio {
   constructor() {
@@ -26,6 +28,40 @@ export class AmbientAudio {
 
     this.createWind(ctx);
     this.footsteps = new Footsteps(ctx, this.master);
+    this.water = new WaterAudio(ctx, this.master);
+    this.forward = { x: 0, y: 0, z: -1 };
+  }
+
+  // Oyente en la cámara (posición y orientación) para las fuentes con PannerNode.
+  updateListener(camera) {
+    const ctx = this.context;
+    if (!ctx) return;
+    const listener = ctx.listener;
+    const e = camera.matrixWorld.elements;
+    const p = camera.position;
+    // -Z local de la cámara = adelante; +Y local = arriba.
+    const [fx, fy, fz, ux, uy, uz] = [-e[8], -e[9], -e[10], e[4], e[5], e[6]];
+    if (listener.positionX) {
+      const t = ctx.currentTime;
+      listener.positionX.setValueAtTime(p.x, t);
+      listener.positionY.setValueAtTime(p.y, t);
+      listener.positionZ.setValueAtTime(p.z, t);
+      listener.forwardX.setValueAtTime(fx, t);
+      listener.forwardY.setValueAtTime(fy, t);
+      listener.forwardZ.setValueAtTime(fz, t);
+      listener.upX.setValueAtTime(ux, t);
+      listener.upY.setValueAtTime(uy, t);
+      listener.upZ.setValueAtTime(uz, t);
+    } else {
+      listener.setPosition(p.x, p.y, p.z);
+      listener.setOrientation(fx, fy, fz, ux, uy, uz);
+    }
+  }
+
+  // Sonido del riachuelo. stream: StreamCourse o null.
+  updateWater(dt, position, stream) {
+    if (!this.water || !stream || this.context.state !== 'running') return;
+    this.water.update(dt, position, stream.nearest(position.x, position.z), stream.rapidPoints());
   }
 
   suspend() {

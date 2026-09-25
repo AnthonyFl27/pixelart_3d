@@ -184,6 +184,15 @@ export const CONFIG = {
       speckleLight: 0.02,
       speckleDark: 0.03,
     },
+    // Piedra mojada del cauce: más oscura y saturada.
+    wetStone: {
+      colors: [0x2c3034, 0x3a3f44, 0x484e52, 0x585e60, 0x6a6f6c],
+      frequency: 4,
+      octaves: 3,
+      blotchWeight: 0.7,
+      speckleLight: 0.04,
+      speckleDark: 0.03,
+    },
     grass: {
       colors: [0x44681c, 0x5f8a24, 0x7fa83a, 0x9cc04a],
       frequency: 4,
@@ -282,6 +291,7 @@ export const CONFIG = {
       areaRadius: 175,
       centerClearance: 30, // distancia mínima al centro del nivel
       pathClearance: 3,    // distancia mínima a los caminos
+      streamClearance: 8,  // distancia mínima a la orilla del riachuelo
       hollows: 34,
       hollowRadius: [2.5, 8],
       hollowDepth: [0.3, 1.3],
@@ -301,6 +311,60 @@ export const CONFIG = {
     range: 2,              // distancia (u) en la que el peso pasa de 1 a 0 alrededor del borde
     edgeNoise: 1.1,        // irregularidad del borde (u)
     edgeNoiseScale: 0.18,  // frecuencia del ruido del borde
+  },
+
+  // Riachuelo (src/world/stream.js). Anchos y profundidades por punto en el nivel.
+  stream: {
+    sampleSpacing: 1,      // distancia entre muestras del recorrido suavizado (u)
+    indexCell: 18,         // celda del índice espacial; debe cubrir valle + talud + radio
+    freeboard: 0.45,       // la orilla queda este tanto por encima del agua
+    maxStep: 0.35,         // altura máxima de un rápido (u)
+    rapidFoamBefore: 2,    // muestras con espuma antes y después de cada rápido
+    rapidFoamAfter: 5,
+    minWaterDepth: 0.2,
+    edgeDepth: 0.06,       // el lecho queda un poco bajo el agua en el borde
+    bankSlope: 1.6,        // anchura del talud entre el agua y la orilla (u)
+    bankIrregularity: 0.15,
+    maxBankHeight: 0.6,    // altura máxima de la orilla sobre su cota junto al cauce
+    valleySlope: 0.35,     // pendiente permitida al alejarse del cauce
+    valleyWidth: 9,        // distancia en la que el valle se funde con el terreno
+    fineMargin: 3,         // margen de malla fina alrededor del talud
+    fineZoneMargin: 25,    // malla fina del cauce hasta esta distancia de una zona despejada (u)
+    gravelFraction: 0.75,  // fracción del radio del agua con fondo de grava
+    mudBand: 0,            // barro más allá del final del talud (u)
+    mudSlopeFraction: 0.8, // fracción del talud cubierta de barro
+    mudStrength: 1,        // < 1: el barro sale a manchas
+    bankPileSpacing: 7,    // tierra acumulada en las orillas cada ~N metros
+    rocks: {
+      spacing: 6,          // una roca en el cauce cada ~N metros
+      spread: 0.85,        // fracción del radio del agua donde pueden caer
+      radius: [0.4, 1],
+      sink: -0.1,          // negativo: la roca asoma sobre el lecho
+      colliderRadius: 0.55,
+      bankRubbleSpacing: 5,
+    },
+  },
+
+  water: {
+    colors: {
+      deep: 0x16307e,
+      mid: 0x2552b0,
+      shallow: 0x3f7fd6,
+      light: 0x6aa8ea,
+      foam: 0xe8f2ff,
+      sparkle: 0xffffff,
+    },
+    acrossSegments: 6,
+    bankOverlap: 0.5,      // la cinta entra en el talud (u)
+    flowSpeed: 1.1,        // velocidad media de la corriente (u/s)
+    rapidSpeedBoost: 1.5,
+    sparkleDensity: 0.05,
+    maxRocks: 48,          // rocas con espuma alrededor (uniforms del shader)
+    ambientWeight: 0.45,   // peso de la luz ambiente en el color del agua
+    lightWeight: 0.24,     // peso de la luz directa (sol o luna)
+    maxTint: 1.15,
+    sparkleBase: 0.35,     // brillo de los destellos sin luz directa (luna)
+    sparkleLight: 0.4,
   },
 
   // Caminos: hundidos por el paso con un reborde de tierra acumulada.
@@ -361,6 +425,8 @@ export const CONFIG = {
     mouseSensitivity: 0.0022,
     maxPitch: 89,          // grados
     boundsMargin: 20,      // distancia mínima al borde del terreno
+    wadeSpeedFactor: 0.55, // velocidad al vadear el riachuelo (sin correr)
+    wadeMinDepth: 0.05,    // profundidad mínima del agua para contar como vadeo
   },
 
   audio: {
@@ -369,6 +435,27 @@ export const CONFIG = {
     windVolume: 0.3,
     chirpVolume: 0.05,     // trinos: volumen bajo y filtrados para no ser chillones
     chirpLowpass: 4200,
+    // Riachuelo (src/audio/water.js): volumen según la distancia a la orilla más cercana.
+    water: {
+      volume: 0.55,
+      fullDistance: 3,     // volumen máximo a esta distancia o menos (u)
+      maxDistance: 35,     // inaudible más allá (u)
+      curve: 1.6,          // > 1: cae más rápido al alejarse
+      rumbleLowpass: 380,  // rumor grave
+      rumbleGain: 0.9,
+      babbleFrequency: [800, 1700], // burbujeo medio (banda que se mueve al azar)
+      babbleQ: 0.9,
+      babbleGain: 0.6,
+      babbleDrift: 0.35,   // segundos entre cambios del burbujeo
+      dropletRate: 5,      // gotas por segundo a volumen máximo
+      dropletFrequency: [450, 1300],
+      dropletGain: 0.25,
+      rapidVoices: 2,      // fuentes extra en los rápidos más cercanos
+      rapidGain: 0.45,
+      rapidFullDistance: 2,
+      rapidMaxDistance: 22,
+      rapidFrequency: 2600,
+    },
   },
 
   // Pasos: dos capas de ruido filtrado (talón + planta) por superficie.
@@ -382,7 +469,7 @@ export const CONFIG = {
     landIntensity: 1.7,
     landMinSpeed: 4,       // velocidad de caída mínima para sonar al aterrizar (u/s)
     // Superficies sin perfil propio todavía: usan el de otra.
-    aliases: { mud: 'dirt', gravel: 'dirt' },
+    aliases: { mud: 'dirt', gravel: 'dirt', water: 'dirt' },
     surfaces: {
       grass: {
         toeDelay: 0.08,

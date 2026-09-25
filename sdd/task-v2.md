@@ -24,19 +24,19 @@ Leyenda: `[ ]` pendiente · `[x]` completada · `[~]` en progreso
 - [x] Añadir `terrainFeatures` a `meadow.js`
 
 ## Fase 15 — Riachuelo
-- [ ] `stream.js`: polilínea suavizada con ancho y profundidad desde los datos del nivel
-- [ ] Excavación del cauce con orillas en pendiente y bordes irregulares
-- [ ] Perfil del nivel del agua descendente con rápidos (escalones ≤ 0,4 m)
-- [ ] Malla de agua en cinta con UV a lo largo del cauce
-- [ ] Shader de agua pixel: tonos por profundidad, flujo, destellos y espuma
-- [ ] Color del agua según el ciclo día/noche
-- [ ] Rocas del cauce (piedra mojada) y cantos en las orillas
-- [ ] Orillas con tierra y barro; pasto excluido del agua
-- [ ] Vadeo: `waterLevelAt`, velocidad reducida, sin correr
-- [ ] `audio/water.js`: rumor, burbujeo y gotas procedurales
-- [ ] Volumen por distancia al cauce (máximo a ≤ 3 m, inaudible a ≈ 35 m) y panner en el punto más cercano
-- [ ] Fuentes de sonido extra en los rápidos
-- [ ] Reubicar elementos del nivel que choquen con el cauce
+- [x] `stream.js`: polilínea suavizada con ancho y profundidad desde los datos del nivel
+- [x] Excavación del cauce con orillas en pendiente y bordes irregulares
+- [x] Perfil del nivel del agua descendente con rápidos (escalones ≤ 0,4 m)
+- [x] Malla de agua en cinta con UV a lo largo del cauce
+- [x] Shader de agua pixel: tonos por profundidad, flujo, destellos y espuma
+- [x] Color del agua según el ciclo día/noche
+- [x] Rocas del cauce (piedra mojada) y cantos en las orillas
+- [x] Orillas con tierra y barro; pasto excluido del agua
+- [x] Vadeo: `waterLevelAt`, velocidad reducida, sin correr
+- [x] `audio/water.js`: rumor, burbujeo y gotas procedurales
+- [x] Volumen por distancia al cauce (máximo a ≤ 3 m, inaudible a ≈ 35 m) y panner en el punto más cercano
+- [x] Fuentes de sonido extra en los rápidos
+- [x] Reubicar elementos del nivel que choquen con el cauce
 
 ## Fase 16 — Puente, camino y entorno de la cabaña
 - [ ] Tipo `archBridge`: dos arcos, pilas, pretiles y tablero con rampas (`groundAt`)

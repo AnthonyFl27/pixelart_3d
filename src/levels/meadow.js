@@ -28,6 +28,32 @@ export const MEADOW = {
     },
   ],
 
+  // Riachuelo de norte a sur por el oeste (src/world/stream.js).
+  // width: radio del agua (u); depth: profundidad del cauce bajo las orillas (u).
+  stream: {
+    points: [
+      { x: -44, z: -196, width: 1.3, depth: 0.8 },
+      { x: -50, z: -150, width: 1.5, depth: 0.8 },
+      { x: -47, z: -110, width: 1.7, depth: 0.85 },
+      { x: -55, z: -70, width: 1.5, depth: 0.8 },
+      { x: -63, z: -35, width: 1.4, depth: 0.8 },
+      { x: -60, z: -8, width: 1.8, depth: 0.85 },
+      { x: -61, z: 12, width: 2.2, depth: 0.9 },
+      { x: -58, z: 32, width: 1.6, depth: 0.8 },
+      { x: -66, z: 62, width: 1.9, depth: 0.85 },
+      { x: -62, z: 100, width: 1.7, depth: 0.8 },
+      { x: -70, z: 140, width: 2, depth: 0.85 },
+      { x: -66, z: 196, width: 2.1, depth: 0.9 },
+    ],
+  },
+
+  // Vegetación (src/world/vegetation.js): zonas y peso de cada una en el reparto.
+  //   { x, z, radius, weight } círculo · { stream: true, band: [min, max], weight } franja en las orillas
+  vegetationAreas: [
+    { x: 0, z: 0, radius: 85, weight: 0.78 },
+    { stream: true, band: [0.4, 4], weight: 0.22 },
+  ],
+
   // Zonas sin relieve procedural (la cabaña y el puente necesitan suelo tranquilo).
   clearZones: [
     { x: -78, z: 10, radius: 16 },
@@ -140,7 +166,7 @@ export const MEADOW = {
     { type: 'tree', x: 30, z: -26, height: 9.5, crownRadius: 3.5, lobes: 6 },
     { type: 'tree', x: -38, z: 30, height: 7 },
     { type: 'tree', x: 46, z: 36, height: 6.5 },
-    { type: 'grove', x: -60, z: -90, radius: 14, count: 7 },
+    { type: 'grove', x: -92, z: -96, radius: 14, count: 7 },
     { type: 'grove', x: 40, z: -118, radius: 18, count: 9 },
     { type: 'grove', x: 108, z: -40, radius: 12, count: 6 },
     { type: 'grove', x: -118, z: -22, radius: 16, count: 8 },

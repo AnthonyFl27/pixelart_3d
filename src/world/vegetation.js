@@ -74,19 +74,34 @@ export class Vegetation {
     return mesh;
   }
 
+  // Punto candidato en una de las zonas del nivel (`vegetationAreas`), elegida por peso.
+  randomAreaPoint() {
+    const areas = this.level.vegetationAreas ?? [{ ...this.level.center, radius: CONFIG.vegetation.radius, weight: 1 }];
+    const total = areas.reduce((sum, area) => sum + area.weight, 0);
+    let pick = this.random() * total;
+    const area = areas.find((a) => (pick -= a.weight) <= 0) ?? areas[0];
+    const stream = this.terrain.stream;
+    if (area.stream && stream) {
+      const p = stream.samples[Math.floor(this.random() * stream.samples.length)];
+      const side = this.random() < 0.5 ? -1 : 1;
+      const offset = p.width + CONFIG.stream.bankSlope + area.band[0] + this.random() * (area.band[1] - area.band[0]);
+      return { x: p.x + p.nx * offset * side, z: p.z + p.nz * offset * side };
+    }
+    const angle = this.random() * Math.PI * 2;
+    const distance = Math.sqrt(this.random()) * area.radius;
+    return { x: area.x + Math.cos(angle) * distance, z: area.z + Math.sin(angle) * distance };
+  }
+
   samplePoint(clustered) {
     const v = CONFIG.vegetation;
-    const { center } = this.level;
-    const angle = this.random() * Math.PI * 2;
-    const distance = Math.sqrt(this.random()) * v.radius;
-    const x = center.x + Math.cos(angle) * distance;
-    const z = center.z + Math.sin(angle) * distance;
+    const { x, z } = this.randomAreaPoint();
 
     if (clustered) {
       const n = this.clusters.fbm(x * v.clusterScale, z * v.clusterScale, { octaves: 3 });
       if (n < v.clusterThreshold && this.random() > v.sparseChance) return null;
     }
     if (this.terrain.isBareGround(x, z, v.bareMargin)) return null;
+    if (this.terrain.waterLevelAt(x, z) !== null) return null;
     for (const c of this.colliders) {
       const dx = x - c.cx;
       const dz = z - c.cz;

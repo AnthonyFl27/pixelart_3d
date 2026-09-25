@@ -8,6 +8,7 @@ import { createRandom, deriveSeed, ValueNoise2D } from '../core/noise.js';
 export function createTextures() {
   return {
     stone: createPaletteTexture('stone', CONFIG.textures.stone),
+    wetStone: createPaletteTexture('wetStone', CONFIG.textures.wetStone),
     grass: createPaletteTexture('grass', CONFIG.textures.grass),
     dirt: createPaletteTexture('dirt', CONFIG.textures.dirt),
     bark: createPaletteTexture('bark', CONFIG.textures.bark),

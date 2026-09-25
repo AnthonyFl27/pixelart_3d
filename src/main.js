@@ -12,6 +12,7 @@ import { Lighting } from './world/lighting.js';
 import { DayCycle } from './world/dayCycle.js';
 import { loadLevel } from './world/levelLoader.js';
 import { Vegetation } from './world/vegetation.js';
+import { StreamWater } from './world/stream.js';
 import { PlayerController } from './player/controller.js';
 import { Overlay } from './ui/overlay.js';
 import { Hud } from './ui/hud.js';
@@ -53,7 +54,11 @@ if (Number.isFinite(startHour)) {
   dayCycle.time = (((startHour / 24) % 1) + 1) % 1;
   dayCycle.update(0);
 }
-const { colliders } = loadLevel(level, { scene, terrain, materials });
+// Las rocas del cauce se añaden como estructuras del nivel.
+const streamRocks = terrain.stream ? terrain.stream.rockEntries() : [];
+const { colliders } = loadLevel({ ...level, structures: [...level.structures, ...streamRocks] }, { scene, terrain, materials });
+const streamWater = terrain.stream ? new StreamWater(terrain.stream, textures.noise) : null;
+if (streamWater) scene.add(streamWater.mesh);
 const vegetation = new Vegetation(level, terrain, colliders, materials.gradientMap);
 scene.add(...vegetation.meshes);
 
@@ -144,6 +149,9 @@ const loop = new GameLoop(renderer, {
     lighting.update(player.position, camera, day);
     scene.fog.color.copy(day.horizon);
     torch.update(dt, { active: inventory.activeItem?.id === 'torch', player, camera, day });
+    streamWater?.update(dt, day);
+    audio.updateListener(camera);
+    audio.updateWater(dt, player.position, terrain.stream);
     birds.update(state === 'playing' ? dt : 0, { day, player, camera });
     hud.update(dt, {
       position: player.position,
@@ -154,6 +162,8 @@ const loop = new GameLoop(renderer, {
       muted: audio.muted,
       clock: `${dayCycle.clock} ${day.phase}`,
       birds: `${birds.visibleCount} (${birds.perchedCount} posados)`,
+      surface: player.surface,
+      water: audio.water ? `${audio.water.distance.toFixed(1)} m vol ${audio.water.volume.toFixed(2)}` : '-',
     });
     input.endFrame();
   },

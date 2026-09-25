@@ -24,6 +24,7 @@ export function createMaterials(textures) {
   return {
     gradientMap,
     stone,
+    wetStone: toon(textures.wetStone),
     grass: toon(textures.grass),
     dirt: toon(textures.dirt),
     bark: toon(textures.bark),

@@ -17,7 +17,8 @@ export class GroundMap {
     this.width = Math.round(size * resolution);
     this.data = new Uint8Array(this.width * this.width * 4);
     for (const feature of features) {
-      if (feature.ground) this.paint(feature, feature.ground);
+      const grounds = Array.isArray(feature.ground) ? feature.ground : [feature.ground];
+      for (const ground of grounds) if (ground) this.paint(feature, ground);
     }
     this.texture = new THREE.DataTexture(this.data, this.width, this.width, THREE.RGBAFormat);
     this.texture.name = 'groundMap';

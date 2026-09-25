@@ -90,7 +90,7 @@ function vary(amount) {
   return 1 + (Math.random() * 2 - 1) * amount;
 }
 
-function createNoiseBuffer(ctx, seconds, type) {
+export function createNoiseBuffer(ctx, seconds, type) {
   const length = Math.floor(ctx.sampleRate * seconds);
   const buffer = ctx.createBuffer(1, length, ctx.sampleRate);
   const data = buffer.getChannelData(0);

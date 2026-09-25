@@ -23,25 +23,69 @@ export function edgeWeight(distance) {
 }
 
 // Polilínea con ancho por punto (caminos, crestas, surcos, cauce).
-// `query(x, z)` -> { distance, width, t (0-1 a lo largo), segment, u }.
+// `query(x, z)` -> { distance, width, t (0-1 a lo largo), segment, u, x, z (punto más cercano) }.
+// Con `cellSize` se construye un índice de segmentos por celdas: las consultas solo miran
+// las celdas vecinas y devuelven distance = Infinity a más de `cellSize` de la línea.
 export class Polyline {
-  constructor(points) {
+  constructor(points, { cellSize = 0 } = {}) {
     this.points = points;
     this.lengths = [];
+    this.offsets = [];
     this.total = 0;
     for (let i = 0; i < points.length - 1; i++) {
       const length = Math.hypot(points[i + 1].x - points[i].x, points[i + 1].z - points[i].z);
       this.lengths.push(length);
+      this.offsets.push(this.total);
       this.total += length;
     }
+    this.cellSize = cellSize;
+    if (cellSize) this.buildIndex();
+  }
+
+  buildIndex() {
+    this.cells = new Map();
+    const key = (ix, iz) => ix * 73856093 ^ iz * 19349663;
+    this.key = key;
+    for (let i = 0; i < this.lengths.length; i++) {
+      const a = this.points[i];
+      const b = this.points[i + 1];
+      const x0 = Math.floor(Math.min(a.x, b.x) / this.cellSize);
+      const x1 = Math.floor(Math.max(a.x, b.x) / this.cellSize);
+      const z0 = Math.floor(Math.min(a.z, b.z) / this.cellSize);
+      const z1 = Math.floor(Math.max(a.z, b.z) / this.cellSize);
+      for (let iz = z0; iz <= z1; iz++) {
+        for (let ix = x0; ix <= x1; ix++) {
+          const k = key(ix, iz);
+          if (!this.cells.has(k)) this.cells.set(k, []);
+          this.cells.get(k).push(i);
+        }
+      }
+    }
+  }
+
+  candidates(x, z) {
+    if (!this.cells) return null;
+    const ix = Math.floor(x / this.cellSize);
+    const iz = Math.floor(z / this.cellSize);
+    const result = [];
+    for (let dz = -1; dz <= 1; dz++) {
+      for (let dx = -1; dx <= 1; dx++) {
+        const list = this.cells.get(this.key(ix + dx, iz + dz));
+        if (list) result.push(...list);
+      }
+    }
+    return result;
   }
 
   query(x, z) {
     const { points, lengths } = this;
+    const list = this.candidates(x, z);
     let best = Infinity;
-    let bestSegment = 0;
+    let bestSegment = -1;
     let bestU = 0;
-    for (let i = 0; i < lengths.length; i++) {
+    const count = list ? list.length : lengths.length;
+    for (let k = 0; k < count; k++) {
+      const i = list ? list[k] : k;
       const a = points[i];
       const b = points[i + 1];
       const abx = b.x - a.x;
@@ -56,8 +100,7 @@ export class Polyline {
         bestU = u;
       }
     }
-    let traveled = 0;
-    for (let i = 0; i < bestSegment; i++) traveled += lengths[i];
+    if (bestSegment < 0) return { distance: Infinity, width: 0, t: 0, segment: 0, u: 0, x, z };
     const a = points[bestSegment];
     const b = points[bestSegment + 1] ?? a;
     const aw = a.width ?? 1;
@@ -65,9 +108,11 @@ export class Polyline {
     return {
       distance: Math.sqrt(best),
       width: aw + (bw - aw) * bestU,
-      t: (traveled + lengths[bestSegment] * bestU) / (this.total || 1),
+      t: (this.offsets[bestSegment] + lengths[bestSegment] * bestU) / (this.total || 1),
       segment: bestSegment,
       u: bestU,
+      x: a.x + (b.x - a.x) * bestU,
+      z: a.z + (b.z - a.z) * bestU,
     };
   }
 
@@ -77,7 +122,7 @@ export class Polyline {
 }
 
 // Deformación del contorno para que las formas no sean círculos perfectos.
-function irregular(x, z) {
+export function irregular(x, z) {
   const { irregularity, irregularityScale } = CONFIG.terrain;
   return 1 + (featureNoise.noise(x * irregularityScale, z * irregularityScale) - 0.5) * 2 * irregularity;
 }
@@ -224,6 +269,7 @@ function scatterFeatures(level) {
   const range = ([min, max]) => min + random() * (max - min);
   const clearZones = level.clearZones ?? [];
   const pathLines = (level.paths ?? []).map((path) => new Polyline(path.points));
+  const streamLine = level.stream && new Polyline(level.stream.points);
   const features = [];
 
   const isClear = (x, z, radius) => {
@@ -233,6 +279,10 @@ function scatterFeatures(level) {
     }
     for (const line of pathLines) {
       if (line.distance(x, z) < s.pathClearance + radius) return false;
+    }
+    if (streamLine) {
+      const { distance, width } = streamLine.query(x, z);
+      if (distance < width + s.streamClearance + radius) return false;
     }
     return true;
   };
@@ -295,12 +345,22 @@ export class HeightField {
     this.gridCount = Math.ceil(size / featureGrid);
     this.half = size / 2;
     this.buckets = Array.from({ length: this.gridCount * this.gridCount }, () => []);
-    for (const feature of features) {
-      const [x0, z0] = this.cell(feature.minX, feature.minZ);
-      const [x1, z1] = this.cell(feature.maxX, feature.maxZ);
-      for (let iz = z0; iz <= z1; iz++) {
-        for (let ix = x0; ix <= x1; ix++) this.buckets[iz * this.gridCount + ix].push(feature);
-      }
+    this.modifiers = [];
+    for (const feature of features) this.addFeature(feature, false);
+  }
+
+  // Los modificadores con `apply(x, z, height)` se aplican después de sumar el resto
+  // (p. ej. el cauce, que recorta el terreno hasta su perfil).
+  addFeature(feature, register = true) {
+    if (register) this.features.push(feature);
+    if (feature.apply) {
+      this.modifiers.push(feature);
+      return;
+    }
+    const [x0, z0] = this.cell(feature.minX, feature.minZ);
+    const [x1, z1] = this.cell(feature.maxX, feature.maxZ);
+    for (let iz = z0; iz <= z1; iz++) {
+      for (let ix = x0; ix <= x1; ix++) this.buckets[iz * this.gridCount + ix].push(feature);
     }
   }
 
@@ -336,6 +396,10 @@ export class HeightField {
       if (x < feature.minX || x > feature.maxX || z < feature.minZ || z > feature.maxZ) continue;
       height += feature.height(x, z);
     }
+    for (const modifier of this.modifiers) {
+      if (x < modifier.minX || x > modifier.maxX || z < modifier.minZ || z > modifier.maxZ) continue;
+      height = modifier.apply(x, z, height);
+    }
     return height;
   }
 
@@ -346,6 +410,11 @@ export class HeightField {
     const cx = THREE.MathUtils.clamp(this.center.x, minX, maxX);
     const cz = THREE.MathUtils.clamp(this.center.z, minZ, maxZ);
     if (Math.hypot(cx - this.center.x, cz - this.center.z) < flatRadius + flatBlend * 0.5) detail = 'mid';
+    for (const modifier of this.modifiers) {
+      const own = modifier.detailIn?.(minX, minZ, maxX, maxZ);
+      if (own === 'fine') return 'fine';
+      if (own === 'mid') detail = 'mid';
+    }
     const [x0, z0] = this.cell(minX, minZ);
     const [x1, z1] = this.cell(maxX, maxZ);
     for (let iz = z0; iz <= z1; iz++) {

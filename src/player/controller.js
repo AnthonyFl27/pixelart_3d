@@ -5,7 +5,7 @@ import { resolveHorizontal, groundInfo, ceilingHeight } from './collision.js';
 // Controlador en primera persona: cámara con ratón, andar/correr/saltar y modo vuelo.
 // `position` es la posición de los pies.
 export class PlayerController {
-  // onStep(surface, intensity): paso o aterrizaje sobre 'grass' | 'dirt' | 'stone'.
+  // onStep(surface, intensity): paso o aterrizaje sobre 'grass' | 'dirt' | 'mud' | 'gravel' | 'stone' | 'water'.
   constructor(camera, terrain, colliders, spawn, { onStep } = {}) {
     this.camera = camera;
     this.terrain = terrain;
@@ -21,6 +21,7 @@ export class PlayerController {
     this.running = false;
     this.stepDistance = 0;
     this.onStructure = false;
+    this.inWater = false;
 
     this.body = {
       radius: CONFIG.player.radius,
@@ -32,7 +33,8 @@ export class PlayerController {
   }
 
   get mode() {
-    return this.flying ? 'vuelo' : 'andar';
+    if (this.flying) return 'vuelo';
+    return this.inWater ? 'vadear' : 'andar';
   }
 
   toggleFly() {
@@ -59,7 +61,7 @@ export class PlayerController {
     this.wish.set(-sin * forward + cos * strafe, 0, -cos * forward - sin * strafe);
     if (this.wish.lengthSq() > 1) this.wish.normalize();
 
-    this.running = input.isDown('ShiftLeft', 'ShiftRight');
+    this.running = input.isDown('ShiftLeft', 'ShiftRight') && !this.inWater;
     if (this.flying) this.updateFlying(dt, input);
     else this.updateWalking(dt, input);
 
@@ -69,7 +71,7 @@ export class PlayerController {
 
   updateWalking(dt, input) {
     const p = CONFIG.player;
-    const speed = this.running ? p.runSpeed : p.walkSpeed;
+    const speed = (this.running ? p.runSpeed : p.walkSpeed) * (this.inWater ? p.wadeSpeedFactor : 1);
     const accel = this.onGround ? p.groundAccel : p.airAccel;
     const blend = 1 - Math.exp(-accel * dt);
     this.velocity.x += (this.wish.x * speed - this.velocity.x) * blend;
@@ -107,7 +109,15 @@ export class PlayerController {
   }
 
   get surface() {
-    return this.onStructure ? 'stone' : this.terrain.getSurface(this.position.x, this.position.z);
+    if (this.onStructure) return 'stone';
+    if (this.inWater) return 'water';
+    return this.terrain.getSurface(this.position.x, this.position.z);
+  }
+
+  // Profundidad del agua sobre los pies (0 fuera del agua).
+  get waterDepth() {
+    const level = this.terrain.waterLevelAt(this.position.x, this.position.z);
+    return level === null ? 0 : Math.max(0, level - this.position.y);
   }
 
   get horizontalSpeed() {
@@ -134,6 +144,7 @@ export class PlayerController {
       this.velocity.y = Math.max(this.velocity.y, 0);
     }
     this.onGround = false;
+    this.inWater = false;
   }
 
   resolveVertical(wasOnGround) {
@@ -145,6 +156,7 @@ export class PlayerController {
 
     const { height: ground, onStructure } = groundInfo(this.position, this.body, this.colliders, this.terrain);
     this.onStructure = onStructure;
+    this.inWater = !onStructure && this.waterDepth > CONFIG.player.wadeMinDepth;
     // Pegarse al suelo al bajar pendientes o escalones en lugar de "despegar".
     const snap = wasOnGround && this.velocity.y <= 0 && this.position.y - ground < this.body.stepHeight;
     if (this.position.y <= ground || snap) {

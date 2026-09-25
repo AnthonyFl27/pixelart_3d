@@ -6,7 +6,7 @@ import { createBoxCollider } from '../player/collision.js';
 
 // Fábrica de estructuras. Cada tipo recibe los parámetros de su entrada de nivel y
 // devuelve piezas:
-//   { geometry, position: [x, y, z], rotationY?, material?: 'stone' | 'bark' | 'leaves',
+//   { geometry, position: [x, y, z], rotationY?, material?: 'stone' | 'wetStone' | 'bark' | 'leaves',
 //     collider?: boolean (true), groundAt?: [x, z] }
 // `groundAt` apoya la pieza en el terreno medido en ese punto local (piezas sueltas
 // o árboles de un bosquecillo sobre terreno irregular).
@@ -52,10 +52,10 @@ export const STRUCTURE_TYPES = {
 
   // Roca redondeada semienterrada. `sink`: fracción del radio enterrada (además del hundimiento común).
   boulder(params, random) {
-    const { radius = 0.8, sink = 0 } = params;
+    const { radius = 0.8, sink = 0, material = 'stone', collider = true } = params;
     const geometry = blobGeometry(radius, random, 0.7, 1);
     geometry.translate(0, -sink * radius, 0);
-    return [{ geometry, position: [0, 0, 0] }];
+    return [{ geometry, position: [0, 0, 0], material, collider }];
   },
 
   // Afloramiento rocoso: rocas semienterradas agrupadas, cada una apoyada en el terreno.
@@ -75,7 +75,7 @@ export const STRUCTURE_TYPES = {
 
   // Piedras pequeñas y escombros dispersos en un círculo (sin colisión).
   rubble(params, random) {
-    const { radius = 1.5, count = 8, minSize = 0.1, maxSize = 0.32 } = params;
+    const { radius = 1.5, count = 8, minSize = 0.1, maxSize = 0.32, material = 'stone' } = params;
     return Array.from({ length: count }, () => {
       const angle = random() * Math.PI * 2;
       const distance = Math.sqrt(random()) * radius;
@@ -86,6 +86,7 @@ export const STRUCTURE_TYPES = {
         geometry: blobGeometry(size, random, 0.6, 0),
         position: [x, 0, z],
         rotationY: random() * Math.PI * 2,
+        material,
         collider: false,
         groundAt: [x, z],
       };

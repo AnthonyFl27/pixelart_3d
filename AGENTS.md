@@ -58,6 +58,7 @@ pixelart_3d/
 │   │   ├── terrain.js          # Terreno por trozos de resolución variable, getHeight(x, z) y suelo (shader)
 │   │   ├── terrainFeatures.js  # Relieve: ruido por capas, hundimientos, montículos, surcos, caminos
 │   │   ├── groundMap.js        # Mapa de suelo (tierra, barro, grava) y getSurface
+│   │   ├── stream.js           # Riachuelo: cauce, nivel del agua con rápidos, rocas y malla de agua
 │   │   ├── dayCycle.js         # Reloj del mundo: hora, fase, sol/luna y colores por keyframes
 │   │   ├── sky.js              # Cúpula de cielo: degradado, nubes, sol, luna y estrellas
 │   │   ├── lighting.js         # Sol/luna con sombras, ambiente y luz de relleno según la hora
@@ -75,7 +76,8 @@ pixelart_3d/
 │   ├── ui/                     # overlay.js (inicio/pausa), hud.js (F3), hotbar.js, ui.css
 │   └── audio/
 │       ├── ambient.js          # Viento, trinos y bus maestro (Web Audio)
-│       └── footsteps.js        # Pasos por superficie (césped, tierra, piedra)
+│       ├── footsteps.js        # Pasos por superficie (césped, tierra, piedra)
+│       └── water.js            # Sonido procedural del riachuelo según distancia y dirección
 ├── sdd/                        # Spec-Driven Development
 │   ├── specs/spec_v1.md        # Especificación del prototipo
 │   ├── specs/spec_v2.md        # Mundo vivo: día/noche, antorcha, fauna y entorno
@@ -122,6 +124,7 @@ pixelart_3d/
 - Abrir el juego en el servidor local y comprobar que no hay errores en consola.
 - `F3` muestra FPS, hora, posición, resolución interna, draw calls, triángulos y pájaros.
 - Parámetros de URL para probar: `?hora=19.5` (hora inicial) y `?pos=x,z,yaw` (posición inicial).
+  Riachuelo: `?pos=-53,20,1.2` (orilla este) y `?pos=-60,40,0.1` (dentro del agua).
 - Mantener `T` acelera el tiempo.
 - Revisar visualmente contra la imagen/video de referencia.
 - Comprobar controles: movimiento, cámara, salto, colisión con estructuras, pausa, inventario y antorcha.
