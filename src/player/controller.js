@@ -5,12 +5,14 @@ import { resolveHorizontal, groundInfo, ceilingHeight } from './collision.js';
 // Controlador en primera persona: cámara con ratón, andar/correr/saltar y modo vuelo.
 // `position` es la posición de los pies.
 export class PlayerController {
-  // onStep(surface, intensity): paso o aterrizaje sobre 'grass' | 'dirt' | 'mud' | 'gravel' | 'stone' | 'water'.
-  constructor(camera, terrain, colliders, spawn, { onStep } = {}) {
+  // onStep(surface, intensity): paso o aterrizaje sobre 'grass' | 'dirt' | 'mud' | 'gravel' | 'stone' | 'wood' | 'water'.
+  // onSeat(action, seat): al sentarse ('sit') o empezar a levantarse ('stand').
+  constructor(camera, terrain, colliders, spawn, { onStep, onSeat } = {}) {
     this.camera = camera;
     this.terrain = terrain;
     this.colliders = colliders;
     this.onStep = onStep;
+    this.onSeat = onSeat;
 
     this.position = new THREE.Vector3(spawn.x, terrain.getHeight(spawn.x, spawn.z), spawn.z);
     this.velocity = new THREE.Vector3();
@@ -64,10 +66,13 @@ export class PlayerController {
     this.seatEye.y += CONFIG.player.seatedEyeHeight;
     this.velocity.set(0, 0, 0);
     this.flying = false;
+    this.onSeat?.('sit', seat);
   }
 
   standUp() {
+    if (this.seatTarget === 0) return;
     this.seatTarget = 0;
+    this.onSeat?.('stand', this.seat);
   }
 
   // Sacude la cámara hacia arriba `degrees` (retroceso del disparo).

@@ -255,6 +255,86 @@ export class Sfx {
     this.burst('brown', 'lowpass', 600, 0.7, l.clinkGain * 0.8, now + 0.1, 0.003, 0.03, output);
   }
 
+  // Sentarse o levantarse (action: 'sit' | 'stand') en un asiento de `material`:
+  // 'wood' (silla: golpe y crujido) o 'fabric' (sofá: roce de tela, muelles y golpe sordo).
+  seat(position, { action = 'sit', material = 'wood' } = {}) {
+    const s = CONFIG.audio.sfx.seat;
+    const ctx = this.ctx;
+    const now = ctx.currentTime + 0.01;
+    const output = this.spatial(position);
+    const level = action === 'stand' ? s.standGain : 1;
+
+    if (material === 'fabric') {
+      const f = s.fabric;
+      const source = ctx.createBufferSource();
+      source.buffer = this.noise.pink;
+      const band = ctx.createBiquadFilter();
+      band.type = 'bandpass';
+      band.frequency.setValueAtTime(f.rustle * vary(0.2), now);
+      band.frequency.linearRampToValueAtTime(f.rustle * 1.6 * vary(0.2), now + f.duration);
+      band.Q.value = 0.9;
+      const envelope = ctx.createGain();
+      envelope.gain.setValueAtTime(0, now);
+      envelope.gain.linearRampToValueAtTime(f.rustleGain * level, now + f.duration * 0.3);
+      envelope.gain.linearRampToValueAtTime(0, now + f.duration);
+      source.connect(band).connect(envelope).connect(output);
+      source.start(now, Math.random() * 0.5, f.duration + 0.02);
+      // Al sentarse: golpe sordo del cojín y los muelles que vibran.
+      const hit = action === 'sit' ? now + f.duration * 0.35 : now;
+      this.tone('sine', f.thump * vary(0.1), f.thumpGain * level, hit, 0.01, 0.05, output, 0.7);
+      this.tone('triangle', range(f.spring), f.springGain * level, hit, 0.005, 0.12, output);
+      return;
+    }
+
+    const w = s.wood;
+    const duration = range(w.duration);
+    const base = range(w.creak);
+    const osc = ctx.createOscillator();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(base, now);
+    osc.frequency.linearRampToValueAtTime(base * vary(0.3), now + duration);
+    const band = ctx.createBiquadFilter();
+    band.type = 'bandpass';
+    band.frequency.value = base * 2.5;
+    band.Q.value = 7;
+    const envelope = ctx.createGain();
+    envelope.gain.setValueAtTime(0, now);
+    envelope.gain.linearRampToValueAtTime(w.gain * level, now + duration * 0.25);
+    envelope.gain.linearRampToValueAtTime(0, now + duration);
+    osc.connect(band).connect(envelope).connect(output);
+    osc.start(now);
+    osc.stop(now + duration + 0.05);
+    this.tone('sine', w.thump * vary(0.1), w.thumpGain * level, now, 0.004, 0.04, output, 0.6);
+    this.burst('brown', 'lowpass', 600, 0.7, w.thumpGain * 0.8 * level, now, 0.002, 0.03, output);
+  }
+
+  // Lámpara de aceite: clic de la rueda de la mecha y soplo de la llama (on: prende;
+  // off: se apaga con un soplido más corto).
+  lamp(position, { on = true } = {}) {
+    const l = CONFIG.audio.sfx.lamp;
+    const ctx = this.ctx;
+    const now = ctx.currentTime + 0.01;
+    const output = this.spatial(position);
+    this.burst('pink', 'highpass', l.click * vary(0.1), 0.7, l.clickGain, now, 0.001, 0.006, output);
+    this.tone('triangle', l.click * 0.5 * vary(0.1), l.clickGain * 0.2, now, 0.001, 0.01, output);
+
+    const source = ctx.createBufferSource();
+    source.buffer = this.noise.brown;
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    const start = now + 0.05;
+    const length = on ? l.whooshTime : l.whooshTime * 0.5;
+    filter.frequency.setValueAtTime(l.whoosh * (on ? 0.5 : 1.5), start);
+    filter.frequency.exponentialRampToValueAtTime(l.whoosh * (on ? 1.5 : 0.4), start + length);
+    const envelope = ctx.createGain();
+    const gain = on ? l.whooshGain : l.puffGain;
+    envelope.gain.setValueAtTime(0, start);
+    envelope.gain.linearRampToValueAtTime(gain, start + (on ? length * 0.4 : 0.01));
+    envelope.gain.linearRampToValueAtTime(0, start + length);
+    source.connect(filter).connect(envelope).connect(output);
+    source.start(start, Math.random() * 0.5, length + 0.02);
+  }
+
   // Tono con ataque y caída exponencial; `drop` baja la frecuencia durante la caída.
   tone(type, frequency, gain, time, attack, decay, output, drop = 1) {
     const osc = this.ctx.createOscillator();

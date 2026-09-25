@@ -12,7 +12,8 @@ import { createHitBox } from './hitBox.js';
 // si el jugador está en su recorrido.
 //
 // Datos: { position: bisagra en mundo, rotationY: giro de la pared (cara exterior hacia +Z),
-//          width, height, hinge: 1 si la hoja se extiende hacia +X local desde la bisagra, -1 si hacia -X }.
+//          width, height, hinge: 1 si la hoja se extiende hacia +X local desde la bisagra, -1 si hacia -X,
+//          zone: zona interior a la que da }.
 // Abre hacia dentro (-Z local).
 
 const PROMPTS = { open: 'Abrir puerta', close: 'Cerrar puerta' };
@@ -21,6 +22,7 @@ export class Door {
   constructor(data, { materials }) {
     const d = CONFIG.door;
     this.name = data.name ?? 'door';
+    this.zone = data.zone ?? null;  // zona interior a la que da (acústica)
     this.width = data.width;
     this.height = data.height;
     this.side = data.hinge ?? 1;

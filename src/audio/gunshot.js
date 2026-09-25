@@ -1,5 +1,6 @@
 import { CONFIG } from '../config.js';
 import { createNoiseBuffer } from './footsteps.js';
+import { createRoomImpulse } from './acoustics.js';
 
 // Sonidos de la escopeta (spec v3, RF-444, RF-449) sintetizados con Web Audio:
 // - Estampido: chasquido inicial, golpe grave con caída de tono y cola de ruido.
@@ -141,17 +142,6 @@ export class Gunshot {
     const duration = Math.min(attack + decay * 6, 2.5);
     source.start(time, Math.random() * (3 - duration), duration);
   }
-}
-
-// Respuesta al impulso de una sala pequeña: ruido estéreo con caída exponencial.
-function createRoomImpulse(ctx, { duration, decay }) {
-  const length = Math.floor(ctx.sampleRate * duration);
-  const buffer = ctx.createBuffer(2, length, ctx.sampleRate);
-  for (let channel = 0; channel < 2; channel++) {
-    const data = buffer.getChannelData(channel);
-    for (let i = 0; i < length; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, decay);
-  }
-  return buffer;
 }
 
 function vary(amount) {

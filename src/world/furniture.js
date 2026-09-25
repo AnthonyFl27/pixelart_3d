@@ -32,7 +32,7 @@ export const FURNITURE_TYPES = {
       const tint = shade(color, 1 + (f.random() - 0.5) * 0.12);
       f.box('fabric', [x0 + 0.01, 0.4, -hd + back], [x0 + seatWidth - 0.01, 0.52, hd - 0.02], { color: tint });
       f.box('fabric', [x0 + 0.02, 0.52, -hd + back], [x0 + seatWidth - 0.02, 0.84, -hd + back + 0.14], { color: tint });
-      seat(f, x0 + seatWidth / 2, 0.52, -hd + back + 0.14, hd, seatWidth);
+      seat(f, x0 + seatWidth / 2, 0.52, -hd + back + 0.14, hd, seatWidth, 'fabric');
     }
     f.collider([-hw, 0, -hd + back], [hw, 0.52, hd]);
     f.collider([-hw, 0, -hd], [hw, 0.88, -hd + back]);
@@ -474,9 +474,11 @@ function legs(f, x, z, height, size, color, cz = 0, layer = 'wood') {
 }
 
 // Asiento interactivo: punto de apoyo sobre el cojín, mirando a +Z, con caja de apuntado.
-function seat(f, x, height, backZ, frontZ, width) {
+// `sound`: 'wood' (silla) o 'fabric' (tapizado) para el efecto de sentarse.
+function seat(f, x, height, backZ, frontZ, width, sound = 'wood') {
   f.interactable({
     type: 'seat',
+    sound,
     position: [x, height, backZ + 0.18],
     hit: { min: [x - width / 2 + 0.03, height - 0.06, backZ], max: [x + width / 2 - 0.03, height + 0.12, frontZ + 0.02] },
   });

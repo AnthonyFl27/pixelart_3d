@@ -38,8 +38,9 @@ export class Lamp {
     return this.on ? 'Apagar lámpara' : 'Encender lámpara';
   }
 
-  interact() {
+  interact({ audio }) {
     this.on = !this.on;
+    audio?.playSfx('lamp', this.lightPosition, { on: this.on });
   }
 
   update(dt) {

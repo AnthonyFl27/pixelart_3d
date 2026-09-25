@@ -667,6 +667,16 @@ export const CONFIG = {
     windVolume: 0.3,
     chirpVolume: 0.05,     // trinos: volumen bajo y filtrados para no ser chillones
     chirpLowpass: 4200,
+    // Acústica de zonas (src/audio/acoustics.js): reverberación de habitación en el bus local
+    // (pasos y efectos) y amortiguación del bus exterior (viento, agua, trinos) dentro.
+    acoustics: {
+      fadeTime: 0.6,         // segundos para pasar de fuera a dentro
+      room: { duration: 0.7, decay: 3, damping: 0.6, early: 6, predelay: 0.025, wet: 2.5, send: 1 },
+      openLowpass: 20000,    // paso bajo del exterior al aire libre (Hz)
+      muffleLowpass: 480,    // … dentro con las puertas cerradas
+      muffleGain: 0.35,      // volumen del exterior dentro con las puertas cerradas
+      doorLeak: 0.55,        // fracción de la amortiguación que quita una puerta abierta
+    },
     // Efectos puntuales con posición en el espacio (src/audio/sfx.js).
     sfx: {
       volume: 0.8,
@@ -696,6 +706,14 @@ export const CONFIG = {
         fadeIn: 0.4,
         fadeOut: 0.12,
       },
+      // Sentarse y levantarse: crujido de madera (sillas) o roce de tela y muelles (sofá).
+      seat: {
+        wood: { creak: [170, 290], duration: [0.25, 0.45], gain: 0.7, thump: 140, thumpGain: 0.35 },
+        fabric: { rustle: 900, rustleGain: 0.35, duration: 0.35, spring: [220, 340], springGain: 0.05, thump: 90, thumpGain: 0.3 },
+        standGain: 0.7,      // al levantarse suena algo más flojo
+      },
+      // Lámpara de aceite: clic de la rueda de la mecha y soplo de la llama al prender o apagarse.
+      lamp: { click: 2600, clickGain: 0.35, whoosh: 700, whooshGain: 0.25, whooshTime: 0.25, puffGain: 0.18 },
       // Recoger objetos: golpe metálico (escopeta), traqueteo de cartuchos y asa del farol.
       pickup: {
         metal: { thump: 110, thumpGain: 0.6, ring: [820, 1370, 2210], ringGain: 0.12, ringDecay: 0.18 },
@@ -767,8 +785,8 @@ export const CONFIG = {
     runIntensity: 1.25,
     landIntensity: 1.7,
     landMinSpeed: 4,       // velocidad de caída mínima para sonar al aterrizar (u/s)
-    // Superficies sin perfil propio todavía: usan el de otra.
-    aliases: { mud: 'dirt', gravel: 'dirt', water: 'dirt' },
+    // Superficies sin perfil propio: usan el de otra (p. ej. { sand: 'dirt' }).
+    aliases: {},
     surfaces: {
       grass: {
         toeDelay: 0.08,
@@ -785,6 +803,36 @@ export const CONFIG = {
         heel: { noise: 'pink', filter: 'lowpass', frequency: 1100, q: 0.6, highpass: 120, attack: 0.002, decay: 0.035, gain: 0.5 },
         toe: { noise: 'pink', filter: 'bandpass', frequency: 900, q: 1.2, highpass: 200, attack: 0.002, decay: 0.03, gain: 0.3 },
         tone: { frequency: 125, drop: 0.6, decay: 0.08, gain: 0.45 },
+      },
+      // Madera (suelo de la cabaña, porche, puente de tablas): golpe hueco con cuerpo
+      // grave y crujido ocasional.
+      wood: {
+        toeDelay: 0.07,
+        heel: { noise: 'brown', filter: 'bandpass', frequency: 320, q: 1.4, highpass: 60, attack: 0.003, decay: 0.07, gain: 1.1 },
+        toe: { noise: 'pink', filter: 'bandpass', frequency: 850, q: 1.6, highpass: 200, attack: 0.003, decay: 0.05, gain: 0.3 },
+        tone: { frequency: 95, drop: 0.75, decay: 0.12, gain: 0.5 },
+        creak: { chance: 0.16, frequency: [180, 320], duration: [0.18, 0.4], glide: 0.25, flutter: [18, 34], q: 7, gain: 0.5 },
+      },
+      // Barro: más blando y húmedo (sin golpe seco, con despegue de la bota).
+      mud: {
+        toeDelay: 0.09,
+        heel: { noise: 'brown', filter: 'lowpass', frequency: 480, q: 0.8, highpass: 50, attack: 0.012, decay: 0.12, gain: 0.8 },
+        toe: { noise: 'pink', filter: 'lowpass', frequency: 900, q: 0.6, highpass: 150, attack: 0.02, decay: 0.08, gain: 0.2 },
+        squelch: { frequency: [260, 1100], q: 4, duration: 0.14, gain: 0.55 },
+      },
+      // Grava: crujido granulado de piedrecitas.
+      gravel: {
+        toeDelay: 0.08,
+        heel: { noise: 'brown', filter: 'lowpass', frequency: 700, q: 0.7, highpass: 80, attack: 0.005, decay: 0.07, gain: 0.55 },
+        toe: { noise: 'pink', filter: 'bandpass', frequency: 1900, q: 0.8, highpass: 500, attack: 0.01, decay: 0.09, gain: 0.3 },
+        grains: { count: [9, 16], spread: 0.16, frequency: [1400, 3200], q: 3, decay: 0.006, gain: 0.35 },
+      },
+      // Agua (vadear): chapoteo de ruido ancho y burbujas.
+      water: {
+        toeDelay: 0.1,
+        heel: { noise: 'pink', filter: 'bandpass', frequency: 1300, q: 0.6, highpass: 250, attack: 0.02, decay: 0.2, gain: 0.8 },
+        toe: { noise: 'pink', filter: 'lowpass', frequency: 2400, q: 0.5, highpass: 600, attack: 0.03, decay: 0.24, gain: 0.45 },
+        bubbles: { count: [2, 5], frequency: [500, 1300], delay: 0.05, spread: 0.25, gain: 0.3 },
       },
     },
   },

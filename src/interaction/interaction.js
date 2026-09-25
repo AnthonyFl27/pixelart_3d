@@ -42,8 +42,15 @@ export class Interaction {
     for (const data of entries) {
       const build = INTERACTABLE_TYPES[data.type];
       if (!build) throw new Error(`Tipo de interactivo desconocido: "${data.type}"`);
-      this.register(build(data, context));
+      const item = build(data, context);
+      item.type = data.type;
+      this.register(item);
     }
+  }
+
+  // Interactivos de un tipo que pertenecen a la zona `zone` (p. ej. las puertas de la cabaña).
+  itemsOf(type, zone) {
+    return this.items.filter((item) => item.type === type && item.zone === zone);
   }
 
   register(item) {

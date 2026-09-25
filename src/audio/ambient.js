@@ -3,9 +3,12 @@ import { Footsteps } from './footsteps.js';
 import { WaterAudio } from './water.js';
 import { Sfx } from './sfx.js';
 import { Gunshot } from './gunshot.js';
+import { Acoustics } from './acoustics.js';
 
 // Audio procedural con Web Audio (sin archivos): viento de fondo, pasos (footsteps.js),
 // riachuelo (water.js), efectos puntuales (sfx.js) y escopeta (gunshot.js). El oyente sigue a la cámara para las fuentes posicionales.
+// Acústica de zonas (acoustics.js): pasos y efectos van al bus `local` (reverberación de
+// habitación dentro de la cabaña); viento, agua y trinos al bus `outdoor` (amortiguado dentro).
 // El AudioContext se crea en `start()`, que debe llamarse tras un gesto del usuario.
 export class AmbientAudio {
   constructor() {
@@ -28,10 +31,12 @@ export class AmbientAudio {
     this.master.gain.value = this.muted ? 0 : CONFIG.audio.masterVolume;
     this.master.connect(ctx.destination);
 
-    this.createWind(ctx);
-    this.footsteps = new Footsteps(ctx, this.master);
-    this.water = new WaterAudio(ctx, this.master);
-    this.sfx = new Sfx(ctx, this.master);
+    this.acoustics = new Acoustics(ctx, this.master);
+    const { local, outdoor } = this.acoustics;
+    this.createWind(ctx, outdoor);
+    this.footsteps = new Footsteps(ctx, local);
+    this.water = new WaterAudio(ctx, outdoor);
+    this.sfx = new Sfx(ctx, local);
     this.gunshot = new Gunshot(ctx, this.master, this.sfx);
     this.forward = { x: 0, y: 0, z: -1 };
   }
@@ -60,6 +65,11 @@ export class AmbientAudio {
       listener.setPosition(p.x, p.y, p.z);
       listener.setOrientation(fx, fy, fz, ux, uy, uz);
     }
+  }
+
+  // Zona del jugador y puertas de esa construcción (acoustics.js).
+  updateAcoustics(dt, zone, doors) {
+    this.acoustics?.update(dt, { zone, doors });
   }
 
   // Sonido del riachuelo. stream: StreamCourse o null.
@@ -100,7 +110,7 @@ export class AmbientAudio {
   }
 
   // Viento: ruido marrón filtrado con volumen y filtro modulados lentamente.
-  createWind(ctx) {
+  createWind(ctx, destination) {
     const source = ctx.createBufferSource();
     source.buffer = createBrownNoiseBuffer(ctx, 4);
     source.loop = true;
@@ -126,7 +136,7 @@ export class AmbientAudio {
     filterDepth.gain.value = 250;
     filterLfo.connect(filterDepth).connect(filter.frequency);
 
-    source.connect(filter).connect(gain).connect(this.master);
+    source.connect(filter).connect(gain).connect(destination);
     source.start();
     gustLfo.start();
     filterLfo.start();
@@ -145,7 +155,7 @@ export class AmbientAudio {
     filter.frequency.value = CONFIG.audio.chirpLowpass;
     const output = ctx.createGain();
     output.gain.value = CONFIG.audio.chirpVolume * volume;
-    filter.connect(panner).connect(output).connect(this.master);
+    filter.connect(panner).connect(output).connect(this.acoustics.outdoor);
 
     const notes = 2 + Math.floor(Math.random() * 3);
     const base = 2200 + Math.random() * 900;
@@ -165,7 +175,7 @@ export class AmbientAudio {
     }
   }
 
-  // Paso sobre `surface` ('grass' | 'dirt' | 'stone').
+  // Paso sobre `surface` ('grass' | 'dirt' | 'mud' | 'gravel' | 'stone' | 'wood' | 'water').
   step(surface, intensity = 1) {
     if (!this.footsteps || this.muted || this.context.state !== 'running') return;
     this.footsteps.play(surface, intensity);

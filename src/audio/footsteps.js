@@ -1,7 +1,12 @@
 import { CONFIG } from '../config.js';
 
 // Síntesis de pasos por superficie. Cada paso son dos capas (talón + planta)
-// de ruido filtrado con envolvente suave; la piedra añade un golpe tonal grave.
+// de ruido filtrado con envolvente suave, más capas opcionales según el perfil:
+// - `tone`: golpe tonal grave (piedra, cuerpo hueco de la madera).
+// - `creak`: crujido ocasional de tablón (madera, con probabilidad `chance`).
+// - `grains`: chasquidos cortos repartidos en el tiempo (grava).
+// - `squelch`: banda de ruido que barre hacia arriba (barro húmedo).
+// - `bubbles`: senos cortos con subida de tono (chapoteo en el agua).
 // Todo pasa por un bus con paso bajo y compresor para evitar agudos chillones.
 export class Footsteps {
   constructor(ctx, destination) {
@@ -36,6 +41,10 @@ export class Footsteps {
     this.playLayer(profile.heel, now, intensity);
     this.playLayer(profile.toe, now + profile.toeDelay * vary(0.25), intensity * 0.8);
     if (profile.tone) this.playTone(profile.tone, now, intensity);
+    if (profile.creak && Math.random() < profile.creak.chance) this.playCreak(profile.creak, now + profile.toeDelay, intensity);
+    if (profile.grains) this.playGrains(profile.grains, now, intensity);
+    if (profile.squelch) this.playSquelch(profile.squelch, now + profile.toeDelay * 0.5, intensity);
+    if (profile.bubbles) this.playBubbles(profile.bubbles, now, intensity);
   }
 
   playLayer(layer, time, intensity) {
@@ -83,6 +92,111 @@ export class Footsteps {
     osc.start(time);
     osc.stop(time + tone.decay * 1.5);
   }
+
+  // Crujido de tablón: diente de sierra en banda estrecha con el tono derivando y
+  // "tirones" que cortan el volumen.
+  playCreak(creak, time, intensity) {
+    const ctx = this.ctx;
+    const duration = range(creak.duration);
+    const base = range(creak.frequency);
+    const osc = ctx.createOscillator();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(base, time);
+    osc.frequency.linearRampToValueAtTime(base * vary(creak.glide), time + duration * 0.5);
+    osc.frequency.linearRampToValueAtTime(base * vary(creak.glide), time + duration);
+    const band = ctx.createBiquadFilter();
+    band.type = 'bandpass';
+    band.frequency.value = base * 2.2;
+    band.Q.value = creak.q;
+    const flutter = ctx.createOscillator();
+    flutter.type = 'square';
+    flutter.frequency.value = range(creak.flutter);
+    const depth = ctx.createGain();
+    depth.gain.value = 0.4;
+    const tremolo = ctx.createGain();
+    tremolo.gain.value = 0.6;
+    flutter.connect(depth).connect(tremolo.gain);
+    const envelope = ctx.createGain();
+    const peak = creak.gain * intensity * vary(0.3);
+    envelope.gain.setValueAtTime(0, time);
+    envelope.gain.linearRampToValueAtTime(peak, time + duration * 0.3);
+    envelope.gain.linearRampToValueAtTime(0, time + duration);
+    osc.connect(band).connect(tremolo).connect(envelope).connect(this.input);
+    for (const node of [osc, flutter]) {
+      node.start(time);
+      node.stop(time + duration + 0.05);
+    }
+  }
+
+  // Grava: `count` chasquidos de ruido en banda repartidos en `spread` segundos.
+  playGrains(grains, time, intensity) {
+    const count = Math.round(range(grains.count));
+    for (let i = 0; i < count; i++) {
+      const start = time + Math.pow(Math.random(), 1.6) * grains.spread;
+      this.playBurst('pink', 'bandpass', range(grains.frequency), grains.q, grains.gain * intensity * (0.4 + Math.random() * 0.6), start, 0.001, grains.decay);
+    }
+  }
+
+  // Barro: ruido marrón en banda que sube de tono (la bota se despega).
+  playSquelch(squelch, time, intensity) {
+    const ctx = this.ctx;
+    const source = ctx.createBufferSource();
+    source.buffer = this.buffers.brown;
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.Q.value = squelch.q;
+    const [low, high] = squelch.frequency;
+    filter.frequency.setValueAtTime(low * vary(0.15), time);
+    filter.frequency.exponentialRampToValueAtTime(high * vary(0.15), time + squelch.duration);
+    const envelope = ctx.createGain();
+    envelope.gain.setValueAtTime(0, time);
+    envelope.gain.linearRampToValueAtTime(squelch.gain * intensity * vary(0.2), time + squelch.duration * 0.4);
+    envelope.gain.linearRampToValueAtTime(0, time + squelch.duration);
+    source.connect(filter).connect(envelope).connect(this.input);
+    source.start(time, Math.random() * 0.5, squelch.duration + 0.02);
+  }
+
+  // Agua: burbujas (seno con subida rápida de tono) tras el chapoteo.
+  playBubbles(bubbles, time, intensity) {
+    const ctx = this.ctx;
+    const count = Math.round(range(bubbles.count));
+    for (let i = 0; i < count; i++) {
+      const start = time + bubbles.delay + Math.random() * bubbles.spread;
+      const frequency = range(bubbles.frequency);
+      const osc = ctx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(frequency, start);
+      osc.frequency.exponentialRampToValueAtTime(frequency * (1.5 + Math.random() * 0.8), start + 0.04);
+      const envelope = ctx.createGain();
+      envelope.gain.setValueAtTime(0, start);
+      envelope.gain.linearRampToValueAtTime(bubbles.gain * intensity * (0.4 + Math.random() * 0.6), start + 0.004);
+      envelope.gain.setTargetAtTime(0, start + 0.01, 0.015);
+      osc.connect(envelope).connect(this.input);
+      osc.start(start);
+      osc.stop(start + 0.08);
+    }
+  }
+
+  // Ráfaga de ruido filtrado corta.
+  playBurst(noise, type, frequency, q, gain, time, attack, decay) {
+    const ctx = this.ctx;
+    const source = ctx.createBufferSource();
+    source.buffer = this.buffers[noise];
+    const filter = ctx.createBiquadFilter();
+    filter.type = type;
+    filter.frequency.value = frequency;
+    filter.Q.value = q;
+    const envelope = ctx.createGain();
+    envelope.gain.setValueAtTime(0, time);
+    envelope.gain.linearRampToValueAtTime(gain, time + attack);
+    envelope.gain.setTargetAtTime(0, time + attack, decay);
+    source.connect(filter).connect(envelope).connect(this.input);
+    source.start(time, Math.random() * 0.6, attack + decay * 6);
+  }
+}
+
+function range([min, max]) {
+  return min + Math.random() * (max - min);
 }
 
 // Factor aleatorio 1 ± amount.

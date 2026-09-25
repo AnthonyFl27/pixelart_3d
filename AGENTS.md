@@ -100,9 +100,10 @@ pixelart_3d/
 │   ├── ui/                     # overlay.js (inicio/pausa), hud.js (F3), hotbar.js, prompt.js (mira y aviso [E]), ammo.js (cartuchos), ui.css
 │   └── audio/
 │       ├── ambient.js          # Viento, trinos y bus maestro (Web Audio)
-│       ├── footsteps.js        # Pasos por superficie (césped, tierra, piedra)
+│       ├── acoustics.js        # Zona interior y puertas: reverb de habitación (bus local) y exterior amortiguado
+│       ├── footsteps.js        # Pasos por superficie (césped, tierra, barro, grava, piedra, madera con crujido, agua)
 │       ├── water.js            # Sonido procedural del riachuelo según distancia y dirección
-│       ├── sfx.js              # Efectos con posición: bisagra, golpe y pestillo, clic, tubo de la tele, recoger
+│       ├── sfx.js              # Efectos con posición: bisagra, golpe y pestillo, clic, tubo de la tele, recoger, asientos, lámpara
 │       └── gunshot.js          # Estampido con eco exterior / reverb interior y compresor; recarga y vainas
 ├── sdd/                        # Spec-Driven Development
 │   ├── specs/spec_v1.md        # Especificación del prototipo
@@ -142,6 +143,10 @@ pixelart_3d/
 - **Objeto recogible en el mundo:** un mueble declara `f.interactable({ type: 'pickup', item, count, model })`
   (ver `gunRack`, `shellBox` y `lanternHook` en `furniture.js`); el modelo va en `PICKUP_MODELS` de
   `src/interaction/pickup.js`. Las cajas de cartuchos son datos de `CABIN_LAYOUT`.
+- **Pasos:** perfiles por superficie en `CONFIG.footsteps.surfaces` (capas de ruido + `tone`, `creak`, `grains`,
+  `squelch`, `bubbles`); la superficie sale del colisionador (`surface` de la pieza), del mapa de suelo o del agua.
+- **Acústica:** los sonidos nuevos van al bus `local` (reverb de habitación dentro) o `outdoor` (amortiguado dentro)
+  de `src/audio/acoustics.js`; parámetros en `CONFIG.audio.acoustics`. Las puertas declaran su `zone`.
 - **Hora del día:** keyframes de color y luz en `CONFIG.dayCycle.keyframes`; duración en `dayLength`.
 - **Relieve:** añadir entradas a `terrainFeatures` en el nivel (`hollow`, `mound`, `ridge`, `gully`, `dirtPile`,
   `dirtPatch`); nuevos tipos en `FEATURE_TYPES` de `src/world/terrainFeatures.js`.
@@ -183,6 +188,9 @@ pixelart_3d/
 - Escopeta: coger la escopeta y los cartuchos (`?pos=-81.2,13.1,3.14`, escopeta arriba y cartuchos de la
   mesa baja detrás a la izquierda), `R` recarga y clic izquierdo dispara (primero el cañón derecho). Sin
   cartucho: clic en seco y `[R] Recargar` o `Sin munición`. `F3` muestra `MUNI` (cañones y reserva).
+- Acústica: `F3` muestra en `ZONA` la apertura de la puerta y la amortiguación del exterior (`amort` 1 con las
+  puertas cerradas, ≈ 0,45 con una abierta). Porche y suelo de la cabaña suenan a madera (`SUELO wood`); vadear
+  en `?pos=-60,40,0.1` (chapoteo). Sentarse y levantarse suenan a tela (sofá) o madera (sillas); la lámpara hace clic.
 - Mantener `T` acelera el tiempo.
 - Revisar visualmente contra la imagen/video de referencia.
 - Comprobar controles: movimiento, cámara, salto, colisión con estructuras, pausa, inventario, antorcha, puertas,

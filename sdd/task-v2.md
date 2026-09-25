@@ -121,12 +121,12 @@ Leyenda: `[ ]` pendiente · `[x]` completada · `[~]` en progreso
 - [x] Pájaros cercanos que huyen al disparar
 
 ## Fase 23 — Acústica de zonas y pasos nuevos
-- [ ] `audio/acoustics.js`: detección de zona interior y estado de la puerta
-- [ ] Reverberación de habitación con respuesta al impulso procedural
-- [ ] Amortiguación del viento y el agua dentro de la cabaña
-- [ ] Pasos de madera con crujido ocasional
-- [ ] Pasos en agua (chapoteo), barro y grava
-- [ ] Efectos de sentarse, levantarse y lámpara
+- [x] `audio/acoustics.js`: detección de zona interior y estado de la puerta
+- [x] Reverberación de habitación con respuesta al impulso procedural
+- [x] Amortiguación del viento y el agua dentro de la cabaña
+- [x] Pasos de madera con crujido ocasional
+- [x] Pasos en agua (chapoteo), barro y grava
+- [x] Efectos de sentarse, levantarse y lámpara
 
 ## Fase 24 — Radio con música
 - [x] Colocar la canción en `assets/audio/radio.mp3` (local, excluida en `.gitignore`)

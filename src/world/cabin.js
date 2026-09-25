@@ -364,6 +364,7 @@ class CabinBuilder {
     this.interactables.push({
       type: 'door',
       name: door.name,
+      zone: 'cabin',
       position: hinge.toArray(),
       rotationY: WALL_ROTATION[wall],
       width: inner * 2,
