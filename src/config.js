@@ -677,6 +677,39 @@ export const CONFIG = {
       muffleGain: 0.35,      // volumen del exterior dentro con las puertas cerradas
       doorLeak: 0.55,        // fracción de la amortiguación que quita una puerta abierta
     },
+    // Radio (src/audio/radioChain.js): estática, crepitado y cadena de altavoz antiguo con
+    // reverberación y eco. Mezcla mayoritariamente húmeda: música de fondo, nunca en primer plano.
+    radio: {
+      volume: 0.7,
+      musicGain: 0.8,
+      static: {
+        gain: 0.28,          // estática de sintonización
+        band: [500, 3800],   // barrido de la banda de ruido (Hz)
+        q: 1.4,
+        sweepStep: [0.15, 0.45], // segundos entre saltos del barrido
+        whistles: [2, 4],    // silbidos heterodinos por sintonización
+        whistle: [900, 3200],
+        whistleGain: 0.05,
+        clicks: [6, 12],     // chasquidos por sintonización
+        clickGain: 0.35,
+        noFile: 0.6,         // nivel de la estática continua sin archivo
+      },
+      crackle: {
+        hiss: 0.025,         // siseo residual mientras suena la canción
+        rate: 2.5,           // chasquidos por segundo
+        gain: 0.08,
+      },
+      eq: { highpass: 180, lowpass: 4500, mid: 1400, midQ: 0.9, midGain: 5 },
+      drive: 2.2,            // saturación suave (tanh)
+      dry: 0.28,
+      reverb: { duration: 2.2, decay: 2.4, damping: 0.5, early: 8, predelay: 0.03, wet: 1.6 },
+      echo: { delay: 0.28, feedback: 0.38, lowpass: 2200, wet: 0.35 },
+      refDistance: 1.8,      // atenuación por distancia (PannerNode)
+      rolloff: 1,
+      maxDistance: 60,
+      // Fuera de su zona (cabaña): más grave y con más reverberación, más aún con la puerta cerrada.
+      outside: { lowpass: 650, gain: 0.4, dry: 0.3, reverbBoost: 0.3 },
+    },
     // Efectos puntuales con posición en el espacio (src/audio/sfx.js).
     sfx: {
       volume: 0.8,
@@ -914,6 +947,25 @@ export const CONFIG = {
     lightIntensity: 0.9,
     lightRange: 4.5,
     lightOffset: 1.1,      // delante de la pantalla (u): ilumina la sala, no la pared de detrás
+  },
+
+  // Radio de válvulas (src/interaction/radio.js): luz 2 del interior. La canción no se
+  // versiona (.gitignore): cada copia local coloca el archivo en `src`.
+  radio: {
+    src: 'assets/audio/radio.mp3',
+    tuningTime: 3,         // segundos de estática de sintonización al encender
+    crossfade: 1.4,        // fundido de la estática a la canción
+    offFade: 0.18,         // fundido al apagar
+    dialFade: 0.25,        // el dial se ilumina y se apaga en este tiempo
+    dialOff: 0x2a2418,
+    dialOn: 0xffb040,
+    needleColor: 0x3a1a0a,
+    needleTravel: 0.8,     // fracción del dial que recorre la aguja
+    lightIndex: 2,
+    lightColor: 0xffa040,
+    lightIntensity: 0.45,
+    lightRange: 1.6,
+    lightOffset: 0.2,      // delante del dial (u)
   },
 
   // Paletas de detalles del mobiliario (src/world/furniture.js).

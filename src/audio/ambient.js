@@ -4,6 +4,7 @@ import { WaterAudio } from './water.js';
 import { Sfx } from './sfx.js';
 import { Gunshot } from './gunshot.js';
 import { Acoustics } from './acoustics.js';
+import { RadioChain } from './radioChain.js';
 
 // Audio procedural con Web Audio (sin archivos): viento de fondo, pasos (footsteps.js),
 // riachuelo (water.js), efectos puntuales (sfx.js) y escopeta (gunshot.js). El oyente sigue a la cámara para las fuentes posicionales.
@@ -20,6 +21,7 @@ export class AmbientAudio {
     if (!CONFIG.audio.enabled) return;
     if (this.context) {
       this.context.resume();
+      for (const radio of this.radios) radio.resume();
       return;
     }
     const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -37,6 +39,7 @@ export class AmbientAudio {
     this.footsteps = new Footsteps(ctx, local);
     this.water = new WaterAudio(ctx, outdoor);
     this.sfx = new Sfx(ctx, local);
+    this.radios = [];
     this.gunshot = new Gunshot(ctx, this.master, this.sfx);
     this.forward = { x: 0, y: 0, z: -1 };
   }
@@ -67,9 +70,17 @@ export class AmbientAudio {
     }
   }
 
-  // Zona del jugador y puertas de esa construcción (acoustics.js).
-  updateAcoustics(dt, zone, doors) {
-    this.acoustics?.update(dt, { zone, doors });
+  // Zona del jugador y puertas de cada zona (acoustics.js).
+  updateAcoustics(dt, zone, zoneDoors) {
+    this.acoustics?.update(dt, { zone, zoneDoors });
+  }
+
+  // Cadena de sonido de una radio en `position` (radioChain.js), o null sin audio.
+  createRadio(position) {
+    if (!this.context) return null;
+    const chain = new RadioChain(this.context, this.master, position);
+    this.radios.push(chain);
+    return chain;
   }
 
   // Sonido del riachuelo. stream: StreamCourse o null.
@@ -99,6 +110,7 @@ export class AmbientAudio {
 
   suspend() {
     this.context?.suspend();
+    for (const radio of this.radios ?? []) radio.suspend();
   }
 
   toggleMute() {

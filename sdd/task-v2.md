@@ -130,19 +130,19 @@ Leyenda: `[ ]` pendiente · `[x]` completada · `[~]` en progreso
 
 ## Fase 24 — Radio con música
 - [x] Colocar la canción en `assets/audio/radio.mp3` (local, excluida en `.gitignore`)
-- [ ] Ruta del archivo en `config.js`
-- [ ] Modelo de radio de válvulas con dial iluminado
-- [ ] `radio.js`: estados `off`, `tuning`, `playing` y sin archivo
-- [ ] Estática de sintonización procedural de ≈ 3 s (barridos, silbidos, chasquidos) al encender
-- [ ] Fundido cruzado de la estática a la canción y crepitado leve de fondo
-- [ ] Reproducción en bucle por streaming (`<audio>` + `MediaElementAudioSourceNode`)
-- [ ] `radioChain.js`: EQ de radio antigua y saturación suave
-- [ ] Reverberación (convolución, cola 1,5–2,5 s) y eco (≈ 280 ms) con mezcla mayoritariamente húmeda: música de fondo
-- [ ] Sonido espacial con `PannerNode` en la radio
-- [ ] Música amortiguada fuera de la cabaña según la puerta
-- [ ] Apagar con clic y fundido; al encender de nuevo, estática y la canción continúa donde se quedó
-- [ ] Respeta pausa (`Esc`) y silencio (`M`)
-- [ ] Fallback a estática sin archivo, sin errores en la consola
+- [x] Ruta del archivo en `config.js`
+- [x] Modelo de radio de válvulas con dial iluminado
+- [x] `radio.js`: estados `off`, `tuning`, `playing` y sin archivo
+- [x] Estática de sintonización procedural de ≈ 3 s (barridos, silbidos, chasquidos) al encender
+- [x] Fundido cruzado de la estática a la canción y crepitado leve de fondo
+- [x] Reproducción en bucle por streaming (`<audio>` + `MediaElementAudioSourceNode`)
+- [x] `radioChain.js`: EQ de radio antigua y saturación suave
+- [x] Reverberación (convolución, cola 1,5–2,5 s) y eco (≈ 280 ms) con mezcla mayoritariamente húmeda: música de fondo
+- [x] Sonido espacial con `PannerNode` en la radio
+- [x] Música amortiguada fuera de la cabaña según la puerta
+- [x] Apagar con clic y fundido; al encender de nuevo, estática y la canción continúa donde se quedó
+- [x] Respeta pausa (`Esc`) y silencio (`M`)
+- [x] Fallback a estática sin archivo, sin errores en la consola
 
 ## Fase 25 — Pájaros: día, aire libre y volumen
 - [ ] Bajar el volumen de los trinos a la mitad (`config.js`)

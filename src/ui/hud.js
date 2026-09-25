@@ -27,7 +27,7 @@ export class Hud {
     }
     if (this.element.hidden) return;
 
-    const { position: p, mode, internal, drawCalls, triangles, muted, clock, birds, surface, water, zone, target, ammo } = info;
+    const { position: p, mode, internal, drawCalls, triangles, muted, clock, birds, surface, water, zone, target, ammo, radio } = info;
     this.element.textContent = [
       `FPS   ${this.fps}`,
       `HORA  ${clock}`,
@@ -38,6 +38,7 @@ export class Hud {
       `SUELO ${surface}`,
       `AGUA  ${water}`,
       `MUNI  ${ammo}`,
+      `RADIO ${radio}`,
       `RES   ${internal.width}x${internal.height} x${internal.scale}`,
       `DRAW  ${drawCalls} (${Math.round(triangles / 1000)}k tris)`,
       `AVES  ${birds}`,

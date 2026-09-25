@@ -4,7 +4,7 @@
 // mueble (+Z local): 0 → +Z, π → -Z, π/2 → +X, -π/2 → -X. Los muebles de pared tienen el
 // origen en la superficie de la pared (ver furniture.js). `y` eleva el mueble (p. ej. sobre
 // una mesa); cuadros y sartenes cuelgan a `hang`. Los interactivos (asientos,
-// lámpara, televisor, objetos recogibles) los declaran los propios muebles. Las cajas de
+// lámpara, televisor, radio, objetos recogibles) los declaran los propios muebles. Las cajas de
 // cartuchos (`shellBox`, `count` cartuchos) son todo el suministro de munición: no reaparecen.
 
 const WALL = { back: -3.42, front: 3.42, left: -4.42, right: 4.42 };
@@ -45,6 +45,7 @@ export const CABIN_LAYOUT = {
     // Aparador de la radio.
     { type: 'cabinet', x: PARTITION - 0.05, z: 2.2, rotationY: -HALF_PI, width: 1.2, depth: 0.45, height: 0.85, drawers: 3, color: 0x7a5234 },
     { type: 'shellBox', x: PARTITION - 0.28, y: 0.86, z: 2.6, rotationY: -HALF_PI, count: 4, name: 'shells-aparador' },
+    { type: 'radio', x: PARTITION - 0.2, y: 0.86, z: 2.0, rotationY: -HALF_PI, name: 'radio' },
     { type: 'picture', x: -0.3, z: WALL.back, hang: 1.55, width: 0.5, height: 0.4 },
     { type: 'picture', x: 0.6, z: WALL.back, hang: 1.7, width: 0.36, height: 0.46, colors: [0xc8b08a, 0x8a5a3a, 0x5a4a3a] },
     { type: 'picture', x: -1.65, z: WALL.front, hang: 1.6, rotationY: Math.PI, width: 0.42, height: 0.52, frame: 0x8a6a3a, colors: [0xa8c0d0, 0x6a8a5a, 0x4a6a3a] },

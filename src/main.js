@@ -101,7 +101,8 @@ const interiors = new Interiors(interiorGroups);
 interiors.track(interaction.items);
 let indoor = 0;
 // Puertas de cada zona interior (acústica: el exterior se oye más con una abierta).
-const zoneDoors = new Map(zones.map((zone) => [zone, interaction.itemsOf('door', zone.name)]));
+const zoneDoors = new Map(zones.map((zone) => [zone.name, interaction.itemsOf('door', zone.name)]));
+const radio = interaction.items.find((item) => item.type === 'radio') ?? null;
 
 const inventory = new Inventory();
 // Objetos en primera persona por id de ITEMS; la antorcha y el farol comparten la luz de mano.
@@ -228,7 +229,7 @@ const loop = new GameLoop(renderer, {
     ammo.update(equipped === 'shotgun', shotgun.barrelState, inventory.count(CONFIG.ammo.item));
     streamWater?.update(dt, day);
     audio.updateListener(camera);
-    audio.updateAcoustics(dt, zone, zone ? zoneDoors.get(zone) : []);
+    audio.updateAcoustics(dt, zone, zoneDoors);
     audio.updateWater(dt, player.position, terrain.stream);
     birds.update(state === 'playing' ? dt : 0, { day, player, camera });
     hud.update(dt, {
@@ -243,6 +244,7 @@ const loop = new GameLoop(renderer, {
       surface: player.surface,
       zone: audio.acoustics?.state ?? zone?.name ?? 'exterior',
       target: interaction.target ? `${interaction.target.name} (${interaction.promptText})` : '-',
+      radio: radio?.status ?? '-',
       ammo: `${shotgun.barrelState.join(' ')} +${inventory.count(CONFIG.ammo.item)}${shotgun.reloading ? ' (recargando)' : ''}`,
       water: audio.water ? `${audio.water.distance.toFixed(1)} m vol ${audio.water.volume.toFixed(2)}` : '-',
     });

@@ -402,6 +402,25 @@ export const FURNITURE_TYPES = {
     f.interactable({ type: 'television', position: [sx, sy, hd - 0.035], width: sw, height: sh, name: p.name ?? 'television', hit: { min: [-hw, 0, -hd], max: [hw, height, hd + 0.02] } });
   },
 
+  // Radio de válvulas de sobremesa (capilla): caja de madera con arco, rejilla del
+  // altavoz con listones, dial iluminado (interactivo `radio`) y dos mandos.
+  radio(p, f) {
+    const { width = 0.44, depth = 0.22, color = 0x6a3e22 } = p;
+    const hw = width / 2;
+    const hd = depth / 2;
+    const body = 0.3;
+    f.box('wood', [-hw, 0.02, -hd], [hw, body, hd], { color });
+    f.cylinder('wood', { radius: hw, height: depth, axis: 'z', x: 0, y: body - 0.06, z: 0, color, segments: 12 });
+    f.box('wood', [-hw - 0.01, 0, -hd - 0.01], [hw + 0.01, 0.025, hd + 0.01], { color: shade(color, 0.7) });
+    // Rejilla del altavoz con listones verticales.
+    f.box('fabric', [-0.13, 0.19, hd - 0.005], [0.13, 0.37, hd + 0.004], { color: 0xb09a70 });
+    for (const x of [-0.065, 0, 0.065]) f.box('wood', [x - 0.012, 0.19, hd], [x + 0.012, 0.37, hd + 0.012], { color: shade(color, 1.15) });
+    // Marco del dial y mandos.
+    f.box('iron', [-0.125, 0.105, hd], [0.125, 0.155, hd + 0.01], { color: 0xb09060 });
+    for (const x of [-0.13, 0.13]) f.cylinder('grain', { radius: 0.028, height: 0.03, axis: 'z', x, y: 0.06, z: hd + 0.015, color: 0x2a1a10 });
+    f.interactable({ type: 'radio', position: [0, 0.13, hd + 0.012], dialSize: [0.2, 0.034], name: p.name ?? 'radio', hit: { min: [-hw, 0, -hd], max: [hw, body + hw - 0.06, hd + 0.03] } });
+  },
+
   // Montón de leña junto a la chimenea.
   logs(p, f) {
     const { count = 5, length = 0.45 } = p;

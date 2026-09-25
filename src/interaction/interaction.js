@@ -6,6 +6,7 @@ import { Seat } from './seat.js';
 import { Lamp } from './lamp.js';
 import { Television } from './television.js';
 import { Pickup } from './pickup.js';
+import { Radio } from './radio.js';
 
 // Sistema de interacción genérico. Cada objeto interactivo expone:
 //   { meshes: Object3D[] (lo que apunta el rayo), object?: Object3D (se añade a la escena),
@@ -21,6 +22,7 @@ export const INTERACTABLE_TYPES = {
   lamp: (data, context) => new Lamp(data, context),
   television: (data, context) => new Television(data, context),
   pickup: (data, context) => new Pickup(data, context),
+  radio: (data, context) => new Radio(data, context),
 };
 
 const SCREEN_CENTER = new THREE.Vector2(0, 0);

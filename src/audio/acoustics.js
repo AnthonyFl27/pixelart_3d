@@ -35,18 +35,20 @@ export class Acoustics {
     this.openness = 0;     // apertura de la puerta más abierta de la zona
     this.muffle = 0;       // amortiguación aplicada al exterior
     this.zone = null;
+    this.zoneDoors = null;
     this.started = false;
   }
 
-  // zone: zona interior del jugador o null; doors: [{ progress }] de esa construcción.
-  update(dt, { zone, doors = [] }) {
+  // zone: zona interior del jugador o null; zoneDoors: Map nombre de zona → [{ progress }].
+  update(dt, { zone, zoneDoors = new Map() }) {
     const a = CONFIG.audio.acoustics;
     this.zone = zone;
+    this.zoneDoors = zoneDoors;
     // La primera vez (al empezar dentro o fuera) sin fundido.
     const blend = this.started ? Math.min(1, dt / a.fadeTime) : 1;
     this.started = true;
     this.indoor += ((zone ? 1 : 0) - this.indoor) * blend;
-    this.openness = doors.reduce((max, door) => Math.max(max, door.progress), 0);
+    this.openness = zone ? this.opennessOf(zone.name) : 0;
     this.muffle = this.indoor * (1 - this.openness * a.doorLeak);
 
     const now = this.ctx.currentTime;
@@ -55,6 +57,18 @@ export class Acoustics {
     this.outdoorFilter.frequency.setTargetAtTime(frequency, now, 0.05);
     this.outdoorGain.gain.setTargetAtTime(1 - this.muffle * (1 - a.muffleGain), now, 0.05);
     this.roomSend.gain.setTargetAtTime(this.indoor * a.room.send, now, 0.05);
+  }
+
+  // Apertura de la puerta más abierta de la zona `name` (0 … 1).
+  opennessOf(name) {
+    return (this.zoneDoors?.get(name) ?? []).reduce((max, door) => Math.max(max, door.progress), 0);
+  }
+
+  // Amortiguación de una fuente situada en la zona `name` (p. ej. la radio): 0 con el
+  // jugador en esa zona … 1 fuera con las puertas cerradas.
+  muffleFor(name) {
+    if (!name || this.zone?.name === name) return 0;
+    return 1 - this.opennessOf(name) * CONFIG.audio.acoustics.doorLeak;
   }
 
   // Texto para el HUD.
