@@ -11,7 +11,7 @@ import { createHitBox } from './hitBox.js';
 // Datos: { position: centro del dial, rotationY, dialSize: [ancho, alto], hitSize, hitOffset }.
 
 const PROMPTS = { on: 'Encender radio', off: 'Apagar radio' };
-const STATUS = { off: 'apagada', tuning: 'estática', playing: 'sonando', static: 'sin archivo (estática)' };
+const STATUS = { off: 'apagada', tuning: 'estática', playing: 'sonando', static: 'estática' };
 
 export class Radio {
   constructor(data, { interiorLighting }) {
@@ -60,6 +60,8 @@ export class Radio {
   // Estado para el HUD.
   get status() {
     if (this.isOn && !this.hasAudio) return `${STATUS[this.state]} (sin audio)`;
+    if (this.state === 'static') return `${STATUS.static} (${this.chain?.failure ?? 'sin archivo'}: ${CONFIG.radio.src})`;
+    if (this.state === 'playing' && this.chain?.blocked) return `${STATUS.playing} (bloqueada: pulsa una tecla)`;
     return STATUS[this.state];
   }
 

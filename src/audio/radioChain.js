@@ -9,13 +9,19 @@ import { createRoomImpulse } from './acoustics.js';
 //   → seco (bajo) + reverberación de habitación (convolución) + eco con realimentación
 //   filtrada → amortiguación de zona (paso bajo fuera de la cabaña) → salida.
 // La canción se reproduce por streaming (el elemento <audio> no decodifica la pista
-// entera). Si el archivo falla, `missing` pasa a true y la radio solo emite estática.
+// entera). Si el archivo falla, `missing` pasa a true (`failure` dice por qué) y la radio
+// solo emite estática; al volver a encenderla se reintenta la carga. Si el navegador
+// bloquea la reproducción fuera de un gesto del usuario, se reintenta con la siguiente
+// tecla o clic.
 export class RadioChain {
   constructor(ctx, destination, position) {
     const r = CONFIG.audio.radio;
     this.ctx = ctx;
     this.noise = createNoiseBuffer(ctx, 3, 'pink');
     this.missing = false;
+    this.failure = null;   // motivo del fallo del archivo (HUD)
+    this.blocked = false;  // play() rechazado por la política de reproducción automática
+    this.wantsPlay = false;
     this.requested = false;
     this.pauseTimer = 0;
     this.popTimer = 0;
@@ -86,6 +92,7 @@ export class RadioChain {
     this.element.preload = 'none';
     this.element.addEventListener('error', () => {
       this.missing = true;
+      this.failure = MEDIA_ERRORS[this.element.error?.code] ?? 'error';
     });
     this.music = ctx.createGain();
     this.music.gain.value = 0;
@@ -120,9 +127,11 @@ export class RadioChain {
     const s = CONFIG.audio.radio.static;
     const ctx = this.ctx;
     const now = ctx.currentTime;
-    if (!this.requested) {
-      // Empieza a cargar la canción mientras suena la estática.
+    if (!this.requested || this.missing) {
+      // Empieza a cargar la canción mientras suena la estática (o reintenta tras un fallo).
       this.requested = true;
+      this.missing = false;
+      this.failure = null;
       this.element.src = CONFIG.radio.src;
       this.element.preload = 'auto';
       this.element.load();
@@ -159,12 +168,33 @@ export class RadioChain {
   startMusic(fade) {
     const r = CONFIG.audio.radio;
     const now = this.ctx.currentTime;
-    this.element.play().catch(() => {
-      if (this.element.error) this.missing = true;
-    });
+    this.play();
     fadeTo(this.music.gain, r.musicGain, now, fade / 3);
     fadeTo(this.staticBus.gain, r.crackle.hiss, now, fade / 3);
     this.crackling = true;
+  }
+
+  // Reproduce el elemento; si el navegador lo bloquea, lo reintenta en el siguiente gesto.
+  play() {
+    this.wantsPlay = true;
+    this.element.play().then(() => {
+      this.blocked = false;
+    }).catch((error) => {
+      if (this.element.error) {
+        this.missing = true;
+        this.failure = MEDIA_ERRORS[this.element.error.code] ?? 'error';
+      } else if (error?.name === 'NotAllowedError' && !this.blocked) {
+        this.blocked = true;
+        const retry = () => {
+          window.removeEventListener('keydown', retry, true);
+          window.removeEventListener('pointerdown', retry, true);
+          if (this.wantsPlay) this.play();
+          else this.blocked = false;
+        };
+        window.addEventListener('keydown', retry, true);
+        window.addEventListener('pointerdown', retry, true);
+      }
+    });
   }
 
   // Sin archivo: estática continua con la banda derivando.
@@ -179,6 +209,7 @@ export class RadioChain {
   // Apagar: fundido corto y pausa del elemento (la canción sigue donde se quedó).
   stop(fade) {
     const now = this.ctx.currentTime;
+    this.wantsPlay = false;
     fadeTo(this.music.gain, 0, now, fade / 3);
     fadeTo(this.staticBus.gain, 0, now, fade / 3);
     this.whistleGain.gain.cancelScheduledValues(now);
@@ -196,7 +227,7 @@ export class RadioChain {
   }
 
   resume() {
-    if (this.resumeOnStart) this.element.play().catch(() => {});
+    if (this.resumeOnStart && this.wantsPlay) this.play();
     this.resumeOnStart = false;
   }
 
@@ -246,6 +277,9 @@ export class RadioChain {
     source.start(time, Math.random() * 2.5, 0.08);
   }
 }
+
+// Códigos de MediaError → motivo para el HUD.
+const MEDIA_ERRORS = { 1: 'carga cancelada', 2: 'error de red', 3: 'no se puede decodificar', 4: 'sin archivo o formato no soportado' };
 
 // Curva tanh normalizada: saturación suave de válvula.
 function createSaturationCurve(drive) {
