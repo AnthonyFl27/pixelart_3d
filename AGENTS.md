@@ -77,8 +77,10 @@ pixelart_3d/
 ├── sdd/                        # Spec-Driven Development
 │   ├── specs/spec_v1.md        # Especificación del prototipo
 │   ├── specs/spec_v2.md        # Mundo vivo: día/noche, antorcha, fauna y entorno
+│   ├── specs/spec_v3.md        # Nuevas zonas: riachuelo, cabaña explorable y relieve
 │   ├── plan.md                 # Plan de implementación
-│   └── task.md                 # Lista de tareas con checkboxes
+│   ├── task.md                 # Tareas de las specs v1 y v2 (completadas)
+│   └── task-v2.md              # Tareas de la spec v3
 └── AGENTS.md
 ```
 
@@ -98,7 +100,7 @@ pixelart_3d/
 
 1. Leer `sdd/specs/` (la versión más alta es la vigente).
 2. Seguir `sdd/plan.md` por fases.
-3. Tomar la siguiente tarea pendiente de `sdd/task.md`, implementarla y marcarla `[x]` en el mismo commit.
+3. Tomar la siguiente tarea pendiente de la lista vigente (`sdd/task-v2.md` para la spec v3), implementarla y marcarla `[x]` en el mismo commit.
 4. Cambios de alcance → nueva spec (`spec_v2.md`, …) y actualización de plan y tareas.
 
 ## Convenciones de código
@@ -123,4 +125,4 @@ pixelart_3d/
 ## Commits
 
 Mensajes en imperativo y descriptivos (`Add pixel render pipeline`, `Fix collision with lintels`).
-Marcar en `sdd/task.md` las tareas completadas en el mismo commit.
+Marcar en la lista de tareas vigente (`sdd/task-v2.md`) las tareas completadas en el mismo commit.

@@ -135,3 +135,115 @@ los pájaros y la vegetación dependen de su estado.
 | Coste del pasto alto | Instancias solo en un radio alrededor del jugador, geometría de pocas caras. |
 | Sombras que "saltan" al cambiar de sol a luna | Transición con intensidad a 0 en el horizonte antes de cambiar de astro. |
 | Pasos repetitivos | Variación aleatoria por capa y superficie. |
+
+---
+
+# Plan de implementación — Spec v3
+
+Basado en `sdd/specs/spec_v3.md`. Tareas en `sdd/task-v2.md`. Primero el terreno y el suelo, porque el cauce,
+los caminos y la cabaña dependen de ellos; después el sistema de interacción, que usan puertas, asientos,
+aparatos y objetos; el audio avanzado (acústica y radio) va al final porque se apoya en las zonas de la cabaña.
+
+## Fase 14 — Relieve del terreno y mapa de suelo
+**Objetivo:** que ningún punto del mapa se vea plano.
+- `src/world/terrainFeatures.js`: modificadores de altura como datos (`hollow`, `mound`, `ridge`, `gully`, `dirtPile`)
+  con caída suave, más una capa procedural con semilla (micro-relieve, hundimientos y rocas repartidas).
+- `terrain.js`: función de altura única (base + micro-relieve + modificadores); malla por trozos con celdas ≤ 1 m
+  en zonas de detalle y faldones o costuras compartidas para evitar grietas; `getHeight` interpola la triangulación del trozo.
+- `src/world/groundMap.js`: textura de datos con capas césped/tierra/barro/grava, generada desde `paths`,
+  `terrainFeatures`, orillas y manchas procedurales; el shader del terreno la muestrea en la rejilla de texels.
+- Varios caminos (`paths`) sin límite fijo de puntos; `getSurface` lee el mapa de suelo.
+- Rocas semienterradas: `boulder` admite `sink` (fracción enterrada).
+**Verificación:** recorrido por el mapa con `F3`; comprobar relieve, sin grietas y con los caminos intactos. (RF-301…RF-312, RV-309, RNF-303)
+
+## Fase 15 — Riachuelo
+**Objetivo:** un arroyo creíble que se ve y se oye.
+- `src/world/stream.js`: polilínea suavizada (Catmull-Rom) con ancho y profundidad; excavación del cauce vía
+  `terrainFeatures`; perfil de nivel del agua descendente con escalones (rápidos).
+- Malla de agua en cinta con UV a lo largo del cauce; shader pixel: tonos por profundidad, flujo desplazado por
+  la velocidad local, destellos de 1 píxel, espuma en rápidos, bordes y rocas; color por `dayCycle`.
+- Rocas del cauce y cantos en las orillas (material de piedra mojada), tierra y barro en las orillas, pasto excluido del agua.
+- Vadeo: consulta `waterLevelAt(x, z)`; reducción de velocidad, sin correr, superficie `water`.
+- `src/audio/water.js`: capas procedurales (rumor, burbujeo, gotas); ganancia por distancia al punto más cercano
+  del cauce y `PannerNode` en ese punto; fuentes extra en los rápidos.
+**Verificación:** acercarse y alejarse del agua con `F3` (distancia y volumen); vadear; ver el agua de día y de noche. (RF-320…RF-329, RV-302…RV-304)
+
+## Fase 16 — Puente, camino y entorno de la cabaña
+**Objetivo:** conectar las zonas.
+- Tipo `archBridge` en `structures.js`: arcos por geometría extruida, pilas, pretiles, tablero con `groundAt` en rampa.
+- Nuevo camino círculo → puente → porche en `meadow.js`; reubicar lo que choque con el cauce.
+- Árbol otoñal (variante de paleta de `tree`), leñera (`woodpile`) y valla rota (`fence`).
+- Campo `surface` por pieza en los colisionadores (piedra, madera).
+**Verificación:** cruzar el puente, pasar por debajo vadeando, seguir el camino hasta la cabaña. (RF-330…RF-332, RF-347)
+
+## Fase 17 — Cabaña: exterior y estructura
+**Objetivo:** la cabaña vintage por fuera, con colisiones.
+- Texturas procedurales: tablas gastadas, tablillas, chapa oxidada, celosía, cristal sucio.
+- `src/world/cabin.js`: paredes de tablas (con tablas sueltas o que faltan), esquinas, huecos de puerta y ventanas,
+  tejado a dos aguas con agujero y vigas, porche con postes, barandilla y escalones, chimenea de piedra, pilotes y celosía.
+- Tipo `cabin` en `structures.js`; fusión por material; colisionadores de paredes, porche, escalones (rampas), techo.
+- Volumen interior declarado para las zonas.
+**Verificación:** rodear la cabaña, subir al porche, comprobar que no se atraviesan paredes ni ventanas. (RF-340…RF-349, RV-305)
+
+## Fase 18 — Sistema de interacción y puerta
+**Objetivo:** base genérica para todo lo interactivo.
+- `src/ui/prompt.js`: punto de mira y aviso pixel art.
+- `src/interaction/interaction.js`: rayo desde la cámara contra mallas interactivas, alcance configurable, tecla `E`.
+- `src/interaction/door.js`: bisagra con animación suavizada, colisionador que gira, bloqueo si el jugador está en el recorrido.
+- `src/audio/sfx.js`: chirrido de bisagra y golpe con pestillo.
+**Verificación:** abrir y cerrar la puerta desde dentro y desde fuera; intentar cerrarla estando en el hueco. (RF-360…RF-373)
+
+## Fase 19 — Interior, mobiliario, asientos y lámpara
+**Objetivo:** una sala y una cocina que invitan a explorar.
+- `src/world/furniture.js`: fábrica de muebles a partir de cajas y cilindros deformados con texturas pixel.
+- `src/levels/cabinLayout.js`: distribución de la sala y la cocina y lista de interactivos.
+- Iluminación interior: relleno que sigue al día, lámpara de aceite (`lamp.js`), luces siempre presentes.
+- `src/interaction/seat.js`: sentarse con transición de cámara, giro limitado, levantarse.
+- Ocultar el interior cuando el jugador está fuera y lejos.
+**Verificación:** recorrer el interior de día y de noche; sentarse en cada asiento. (RF-350…RF-355, RF-380…RF-383, RV-306)
+
+## Fase 20 — Televisor
+- `src/interaction/television.js`: pantalla con textura de canvas (NO SIGNAL, barrido, ruido), animaciones de
+  encendido/apagado, luz fría y sonidos (clic, zumbido, estática) con posición en el espacio.
+**Verificación:** encender desde el sofá y apagar; comprobar la luz en la sala de noche. (RF-390…RF-394, RV-307)
+
+## Fase 21 — Objetos recogibles: escopeta y farol
+- `src/interaction/pickup.js`: objetos del mundo que se retiran y pasan a la primera ranura libre.
+- `inventory.js`: `addItem`, aviso de inventario lleno; `ITEMS` con escopeta y farol.
+- `src/items/shotgun.js` y `src/items/lantern.js`: iconos 16×16 y modelos en primera persona con balanceo y sacar/guardar.
+- `src/items/handLight.js`: la luz de la antorcha pasa a ser la luz de mano compartida.
+**Verificación:** coger ambos objetos, cambiar de ranura, ver el farol iluminar de noche. (RF-400…RF-405, RV-308)
+
+## Fase 22 — Acústica de zonas y pasos nuevos
+- `src/audio/acoustics.js`: bus interior con convolución (IR procedural), amortiguación del exterior según zona y puerta.
+- `footsteps.js`: perfiles de madera (crujido aleatorio), agua, barro y grava; superficie desde el colisionador.
+- Efectos de sentarse, recoger y lámpara en `sfx.js`.
+**Verificación:** caminar por el porche, el interior, el agua, el barro y la grava; entrar y salir con la puerta abierta y cerrada. (RF-420…RF-424)
+
+## Fase 23 — Radio con música
+- `src/interaction/radio.js`: estados (apagada, sintonizando, cargando, sonando, sin archivo), dial iluminado.
+- `src/audio/radioChain.js`: `AudioBufferSourceNode` en bucle → EQ de radio → saturación (`WaveShaperNode`) →
+  crepitado → `PannerNode` en la radio → seco + envío a reverb (`ConvolverNode`) y eco (`DelayNode` con realimentación
+  filtrada) → bus que pasa por la amortiguación de zona de `acoustics.js`.
+- Carga diferida del `.mp3` (`fetch` + `decodeAudioData`) al primer encendido; fallback a estática sin errores.
+**Verificación:** encender, escuchar dentro, en el porche y a 30 m; pausa y silencio; probar sin el archivo. (RF-410…RF-418)
+
+## Fase 24 — Pulido y validación v3
+- Ajuste visual del agua, la madera y el interior a baja resolución; colores por fase del día.
+- Rendimiento: draw calls, triángulos, ocultación del interior (RNF-301, RNF-302).
+- HUD con los campos nuevos y puntos de prueba en `AGENTS.md`; actualizar `README.md`.
+- Criterios de aceptación de la spec v3.
+
+## Riesgos v3
+
+| Riesgo | Mitigación |
+|--------|-----------|
+| Más resolución de terreno dispara los triángulos | Detalle solo en trozos con cauce, cabaña o caminos; resto con la resolución actual. |
+| Grietas entre trozos de distinta resolución | Faldones verticales o bordes con la resolución del vecino más grueso. |
+| Interior demasiado oscuro por la sombra del tejado | Relleno interior que sigue al día + luz por ventanas y agujero; ajustar con capturas. |
+| Muchas luces encarecen los shaders | Número de luces fijo, sin sombras, intensidad 0 al apagar; luz de mano compartida. |
+| Recompilación de shaders al encender aparatos | Todas las luces y uniforms creados al cargar. |
+| Política de autoplay del navegador | El `AudioContext` ya se reanuda con el clic de inicio; la radio solo suena tras `E`. |
+| Tamaño o formato del `.mp3` | Carga diferida, tamaño recomendado ≤ 10 MB, fallback a estática. |
+| Colisión con la puerta en movimiento | Colisionador desactivado durante la animación y cierre bloqueado si el jugador ocupa el recorrido. |
+| Sonido del agua repetitivo | Capas con modulación lenta aleatoria y gotas en instantes aleatorios. |

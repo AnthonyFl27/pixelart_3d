@@ -1,5 +1,7 @@
 # Tareas — Spec v1 (completada)
 
+> Las tareas de la spec v3 están en `sdd/task-v2.md`.
+
 Leyenda: `[ ]` pendiente · `[x]` completada · `[~]` en progreso
 
 ## Fase SDD
