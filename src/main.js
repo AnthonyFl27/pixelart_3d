@@ -18,6 +18,8 @@ import { PlayerController } from './player/controller.js';
 import { Overlay } from './ui/overlay.js';
 import { Hud } from './ui/hud.js';
 import { Hotbar } from './ui/hotbar.js';
+import { Prompt } from './ui/prompt.js';
+import { Interaction } from './interaction/interaction.js';
 import { Inventory } from './items/inventory.js';
 import { Torch } from './items/torch.js';
 import { AmbientAudio } from './audio/ambient.js';
@@ -57,7 +59,7 @@ if (Number.isFinite(startHour)) {
 }
 // Las rocas del cauce se añaden como estructuras del nivel.
 const streamRocks = terrain.stream ? terrain.stream.rockEntries() : [];
-const { colliders, zones } = loadLevel({ ...level, structures: [...level.structures, ...streamRocks] }, { scene, terrain, materials });
+const { colliders, zones, interactables } = loadLevel({ ...level, structures: [...level.structures, ...streamRocks] }, { scene, terrain, materials });
 const streamWater = terrain.stream ? new StreamWater(terrain.stream, textures.noise) : null;
 if (streamWater) scene.add(streamWater.mesh);
 const vegetation = new Vegetation(level, terrain, colliders, materials.gradientMap);
@@ -79,6 +81,10 @@ const birds = new Birds(level, terrain, colliders, {
 });
 scene.add(birds.mesh);
 
+// Objetos interactivos (puertas…): sus colisionadores se suman a los del jugador.
+const interaction = new Interaction({ scene, camera, colliders });
+interaction.load(interactables, { materials });
+
 const inventory = new Inventory();
 const torch = new Torch();
 scene.add(torch.light);
@@ -87,6 +93,7 @@ pipeline.addOverlay(torch);
 const ui = document.getElementById('ui');
 const hud = new Hud(ui, CONFIG.debug.showHud);
 const hotbar = new Hotbar(ui, inventory);
+const prompt = new Prompt(ui, CONFIG.interaction.key.replace('Key', ''));
 const overlay = new Overlay(ui, { title: level.name, onStart: start });
 
 // Estados: 'start' -> 'playing' <-> 'paused'.
@@ -96,7 +103,7 @@ function setState(next) {
   if (state === next) return;
   state = next;
   const playing = state === 'playing';
-  hud.setPlaying(playing);
+  prompt.setPlaying(playing);
   if (playing) {
     overlay.hide();
     audio.start();
@@ -137,6 +144,7 @@ const loop = new GameLoop(renderer, {
     if (state === 'playing') {
       player.update(dt, input);
       inventory.update(input);
+      prompt.show(interaction.update(dt, input, { player, audio }));
       dayCycle.update(dt * (input.isDown('KeyT') ? CONFIG.dayCycle.fastForward : 1));
     } else {
       input.consumeMouse();
@@ -165,6 +173,7 @@ const loop = new GameLoop(renderer, {
       birds: `${birds.visibleCount} (${birds.perchedCount} posados)`,
       surface: player.surface,
       zone: zoneAt(zones, player.position)?.name ?? 'exterior',
+      target: interaction.target ? `${interaction.target.name} (${interaction.target.prompt()})` : '-',
       water: audio.water ? `${audio.water.distance.toFixed(1)} m vol ${audio.water.volume.toFixed(2)}` : '-',
     });
     input.endFrame();

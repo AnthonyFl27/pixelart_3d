@@ -2,19 +2,21 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { createStructure } from './structures.js';
 
-// Instancia las estructuras de un nivel y devuelve sus colisionadores y zonas
-// (volúmenes con nombre, p. ej. el interior de la cabaña).
+// Instancia las estructuras de un nivel y devuelve sus colisionadores, zonas
+// (volúmenes con nombre, p. ej. el interior de la cabaña) y objetos interactivos (datos).
 // Las piezas se fusionan en una malla por material (1 draw call por material
 // para la escena y otra para el shadow map, salvo materiales sin sombra).
 export function loadLevel(level, { scene, terrain, materials }) {
   const colliders = [];
   const zones = [];
+  const interactables = [];
   const geometriesByMaterial = new Map();
 
   level.structures.forEach((entry, index) => {
     const structure = createStructure(entry, index, { terrain, materials });
     colliders.push(...structure.colliders);
     zones.push(...structure.zones);
+    interactables.push(...structure.interactables);
     const baseY = structure.group.position.y;
     structure.group.traverse((object) => {
       if (!object.isMesh) return;
@@ -42,5 +44,5 @@ export function loadLevel(level, { scene, terrain, materials }) {
     geometries.forEach((geometry) => geometry.dispose());
   }
 
-  return { meshes, colliders, zones };
+  return { meshes, colliders, zones, interactables };
 }

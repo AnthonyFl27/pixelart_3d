@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { CONFIG } from '../config.js';
-import { applyBoxUVs, extrudeAcross } from './geometryUtils.js';
+import { applyBoxUVs, extrudeAcross, plankUVs } from './geometryUtils.js';
 
 // Carcasa de la cabaña de madera (spec v3, 4.5): paredes de tablas con huecos de puerta y
 // ventanas, tejado a dos aguas con tablillas, chapas y un agujero, porche con techo,
@@ -12,6 +12,10 @@ import { applyBoxUVs, extrudeAcross } from './geometryUtils.js';
 // (las paredes solo giran múltiplos de 90°) salvo la rampa de los escalones.
 
 const WALLS = ['front', 'back', 'left', 'right'];
+const WALL_ROTATION = { front: 0, back: Math.PI, right: Math.PI / 2, left: -Math.PI / 2 };
+// Forro del hueco de la puerta y holgura de la hoja (u).
+const DOOR_LINER = 0.03;
+const DOOR_GAP = 0.005;
 
 export function createCabin(params, random, { ground }) {
   const config = { ...CONFIG.cabin, ...params };
@@ -21,10 +25,8 @@ export function createCabin(params, random, { ground }) {
 // Marco de una pared: a lo largo de X, cara exterior hacia +Z, y = 0 en el suelo.
 function wallMatrix(wall, width, depth) {
   const m = new THREE.Matrix4();
-  if (wall === 'front') return m.makeTranslation(0, 0, depth / 2);
-  if (wall === 'back') return m.makeRotationY(Math.PI).setPosition(0, 0, -depth / 2);
-  if (wall === 'right') return m.makeRotationY(Math.PI / 2).setPosition(width / 2, 0, 0);
-  return m.makeRotationY(-Math.PI / 2).setPosition(-width / 2, 0, 0);
+  const offset = { front: [0, 0, depth / 2], back: [0, 0, -depth / 2], right: [width / 2, 0, 0], left: [-width / 2, 0, 0] }[wall];
+  return m.makeRotationY(WALL_ROTATION[wall]).setPosition(...offset);
 }
 
 // Marco de un faldón: X a lo ancho, Y normal al tejado, Z pendiente abajo desde (0, y, z).
@@ -37,24 +39,6 @@ function slopeMatrix(side, angle, y, z) {
     new THREE.Vector3(0, cos, side * sin),
     new THREE.Vector3(0, -sin, side * cos),
   ).setPosition(0, y, z);
-}
-
-// UVs de tabla: cada pieza muestra una sola fila de la textura `planks` con un
-// desplazamiento aleatorio a lo largo. `vertical`: la veta sigue el eje Y.
-function plankUVs(geometry, random, vertical = false) {
-  applyBoxUVs(geometry);
-  const { size, planks } = CONFIG.textures;
-  const rows = size / planks.rowHeight;
-  const du = Math.floor(random() * size) / size;
-  const dv = 1 - (Math.floor(random() * rows) * planks.rowHeight + planks.rowHeight / 2) / size;
-  const uv = geometry.attributes.uv;
-  for (let i = 0; i < uv.count; i++) {
-    const u = uv.getX(i);
-    const v = uv.getY(i);
-    if (vertical) uv.setXY(i, v + du, u + dv);
-    else uv.setXY(i, u + du, v + dv);
-  }
-  return geometry;
 }
 
 // Box mapping con los ejes U/V intercambiados (veta vertical en `wood`).
@@ -94,6 +78,9 @@ class CabinBuilder {
     this.pieces = [];
     this.woodColliders = [];
     this.stoneColliders = [];
+    this.stairsColliders = [];
+    this.backStairs = [];
+    this.interactables = [];
 
     // El suelo interior queda `floorClearance` sobre el punto más alto bajo la cabaña.
     let max = -Infinity;
@@ -144,6 +131,7 @@ class CabinBuilder {
     this.buildWalls();
     this.buildRoof();
     this.buildPorch();
+    for (const stairs of this.backStairs) this.buildStairs(stairs);
     this.buildChimney();
     this.buildFoundation();
     this.frame = null;
@@ -152,11 +140,11 @@ class CabinBuilder {
       ...this.pieces,
       { geometry: null, position: [0, 0, 0], collider: this.woodColliders, surface: 'wood' },
       { geometry: null, position: [0, 0, 0], collider: this.stoneColliders, surface: 'stone' },
-      this.stairsCollider,
+      ...this.stairsColliders,
     ];
     // Volumen interior para las zonas (acústica, pájaros, iluminación, interior oculto).
     const zones = [{ name: 'cabin', min: [-this.W / 2, -0.5, -this.D / 2], max: [this.W / 2, this.R, this.D / 2] }];
-    return { pieces, baseY: this.baseY, zones };
+    return { pieces, baseY: this.baseY, zones, interactables: this.interactables };
   }
 
   // --- Suelo, pilotes y celosía ----------------------------------------------
@@ -219,7 +207,7 @@ class CabinBuilder {
     const { W, D, H, c } = this;
     const snap = (y) => Math.round(y / this.rowHeight) * this.rowHeight;
     const openings = Object.fromEntries(WALLS.map((wall) => [wall, []]));
-    openings[c.door.wall].push({ ...c.door, bottom: 0, top: snap(c.door.height), door: true });
+    for (const door of c.doors) openings[door.wall].push({ ...door, bottom: 0, top: snap(door.height), door: true });
     for (const window of c.windows) openings[window.wall].push({ ...window, bottom: snap(window.bottom), top: snap(window.top) });
 
     for (const wall of WALLS) {
@@ -246,8 +234,12 @@ class CabinBuilder {
       for (const door of doors) this.collide([door.x - door.width / 2, door.top, back], [door.x + door.width / 2, H, 0.04]);
 
       for (const opening of list) {
-        if (opening.door) this.buildDoorFrame(opening);
-        else this.buildWindow(opening);
+        if (opening.door) {
+          this.buildDoorFrame(opening);
+          this.addDoor(wall, opening);
+        } else {
+          this.buildWindow(opening);
+        }
       }
     }
     this.frame = null;
@@ -329,9 +321,31 @@ class CabinBuilder {
     this.box('wood', [right, 0, 0], [right + trim, door.top + trim, 0.04], verticalUVs);
     this.box('wood', [left - trim, door.top, 0], [right + trim, door.top + trim, 0.04]);
     this.box('wood', [left, door.top - 0.02, -t - 0.02], [right, door.top, 0.02]);
-    this.box('wood', [left, 0, -t - 0.02], [left + 0.03, door.top, 0.02], verticalUVs);
-    this.box('wood', [right - 0.03, 0, -t - 0.02], [right, door.top, 0.02], verticalUVs);
+    this.box('wood', [left, 0, -t - 0.02], [left + DOOR_LINER, door.top, 0.02], verticalUVs);
+    this.box('wood', [right - DOOR_LINER, 0, -t - 0.02], [right, door.top, 0.02], verticalUVs);
     this.box('wood', [left, 0, -t - 0.05], [right, 0.03, 0.05]);
+  }
+
+  // Hoja de la puerta como objeto interactivo (src/interaction/door.js): bisagra en el
+  // marco de la cabaña, girada como la pared; la hoja se extiende desde la bisagra
+  // hacia el otro lado del hueco y abre hacia dentro.
+  addDoor(wall, door) {
+    const side = door.hinge === 'right' ? -1 : 1;
+    const inner = door.width / 2 - DOOR_LINER - DOOR_GAP;
+    const hinge = new THREE.Vector3(door.x - side * inner, DOOR_LINER + DOOR_GAP, -this.c.boardThickness / 2).applyMatrix4(this.frame);
+    this.interactables.push({
+      type: 'door',
+      name: door.name,
+      position: hinge.toArray(),
+      rotationY: WALL_ROTATION[wall],
+      width: inner * 2,
+      height: door.top - 0.02 - DOOR_LINER - DOOR_GAP * 2,
+      hinge: side,
+    });
+    if (door.stairs === 'ground') {
+      const center = new THREE.Vector3(door.x, 0, 0).applyMatrix4(this.frame);
+      this.backStairs.push({ x: center.x, z: center.z, rotation: WALL_ROTATION[wall], top: 0, width: door.width + 0.3 });
+    }
   }
 
   // Ventana: marco, alféizar, travesaños, cristales (uno puede estar roto) y contraventanas.
@@ -531,7 +545,7 @@ class CabinBuilder {
   buildPorch() {
     const { W, D, H, c, porchFront, porchTop } = this;
     const p = c.porch;
-    const doorX = c.door.x;
+    const doorX = c.doors.find((door) => door.stairs === 'porch').x;
     const bottom = this.groundMin - 0.5;
 
     this.box('planks', [-W / 2, porchTop - p.thickness, D / 2], [W / 2, porchTop, porchFront]);
@@ -580,7 +594,7 @@ class CabinBuilder {
     this.railing([posts[0], D / 2 + 0.02], [posts[0], postZ - s / 2]);
     this.railing([posts[3], D / 2 + 0.02], [posts[3], postZ - s / 2]);
 
-    this.buildStairs(doorX);
+    this.buildStairs({ x: doorX, z: porchFront, rotation: 0, top: porchTop, width: p.stairsWidth });
   }
 
   // Tramo de barandilla recto (a lo largo de X o de Z) con balaústres.
@@ -610,19 +624,19 @@ class CabinBuilder {
     this.collide(...at(0, 0.06, base, base + p.railHeight + 0.05, length));
   }
 
-  // Escalones hasta el terreno con zancas laterales y una rampa como colisionador.
-  // Marco propio: X hacia fuera del porche, girado -90° (X local → +Z de la cabaña).
-  buildStairs(doorX) {
+  // Escalones desde `top` hasta el terreno con zancas laterales y una rampa como
+  // colisionador. Arrancan en (x, z) hacia fuera de una pared girada `rotation`.
+  // Marco propio: X hacia fuera (para el porche, X local → +Z de la cabaña).
+  buildStairs({ x, z, rotation: wallRotation, top: porchTop, width }) {
     const p = this.c.porch;
-    const { porchFront, porchTop } = this;
-    const width = p.stairsWidth;
-    const groundAt = (run) => this.ground(doorX, porchFront + run);
+    const out = [Math.sin(wallRotation), Math.cos(wallRotation)];
+    const groundAt = (run) => this.ground(x + out[0] * run, z + out[1] * run);
     const n = Math.max(2, Math.ceil((porchTop - groundAt(p.stepRun * 2)) / p.maxStepRise));
     const run = (n - 1) * p.stepRun + p.stepRun * 0.5;
     const end = groundAt(run);
     const rise = (porchTop - end) / n;
-    const rotation = -Math.PI / 2;
-    this.frame = new THREE.Matrix4().makeRotationY(rotation).setPosition(doorX, 0, porchFront);
+    const rotation = wallRotation - Math.PI / 2;
+    this.frame = new THREE.Matrix4().makeRotationY(rotation).setPosition(x, 0, z);
 
     for (let k = 1; k < n; k++) {
       const y = porchTop - k * rise;
@@ -641,13 +655,13 @@ class CabinBuilder {
       this.add('wood', geometry);
     }
     this.frame = null;
-    this.stairsCollider = {
+    this.stairsColliders.push({
       geometry: null,
-      position: [doorX, 0, porchFront],
+      position: [x, 0, z],
       rotationY: rotation,
       surface: 'wood',
       collider: [{ min: [0, end - 0.6, -width / 2], max: [run, porchTop, width / 2], rise: end - porchTop }],
-    };
+    });
   }
 
   // --- Chimenea ----------------------------------------------------------------

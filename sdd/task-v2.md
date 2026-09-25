@@ -60,12 +60,12 @@ Leyenda: `[ ]` pendiente · `[x]` completada · `[~]` en progreso
 - [x] Volumen interior declarado para las zonas
 
 ## Fase 18 — Sistema de interacción y puerta
-- [ ] `ui/prompt.js`: punto de mira y aviso `[E] …` pixel art
-- [ ] `interaction.js`: rayo desde la cámara, alcance configurable, registro genérico y tecla `E`
-- [ ] `door.js`: puerta con bisagra y animación suave
-- [ ] Colisión de la puerta que sigue la rotación y bloqueo si el jugador está en el recorrido
-- [ ] `audio/sfx.js`: chirrido de bisagra con variación y golpe con clic de pestillo
-- [ ] (Opcional) Puerta trasera de la cocina y puertas de armarios
+- [x] `ui/prompt.js`: punto de mira y aviso `[E] …` pixel art
+- [x] `interaction.js`: rayo desde la cámara, alcance configurable, registro genérico y tecla `E`
+- [x] `door.js`: puerta con bisagra y animación suave
+- [x] Colisión de la puerta que sigue la rotación y bloqueo si el jugador está en el recorrido
+- [x] `audio/sfx.js`: chirrido de bisagra con variación y golpe con clic de pestillo
+- [~] (Opcional) Puerta trasera de la cocina y puertas de armarios — puerta trasera hecha; armarios con los muebles (fase 19)
 
 ## Fase 19 — Interior, mobiliario, asientos y lámpara
 - [ ] Suelo de tablones, paredes interiores, tabique con vano y vigas del techo

@@ -91,19 +91,61 @@
 }
 
 .hud[hidden],
-.crosshair[hidden] {
+.crosshair[hidden],
+.prompt[hidden] {
   display: none;
 }
 
+/* Mira: punto central con cuatro brazos de píxeles (sombras duras). */
 .crosshair {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 4px;
-  height: 4px;
-  margin: -2px 0 0 -2px;
+  width: 2px;
+  height: 2px;
+  margin: -1px 0 0 -1px;
   background: var(--ui-text);
-  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.35);
+  box-shadow:
+    -6px 0 0 0 var(--ui-text), -4px 0 0 0 var(--ui-text),
+    6px 0 0 0 var(--ui-text), 4px 0 0 0 var(--ui-text),
+    0 -6px 0 0 var(--ui-text), 0 -4px 0 0 var(--ui-text),
+    0 6px 0 0 var(--ui-text), 0 4px 0 0 var(--ui-text);
+  filter: drop-shadow(1px 1px 0 rgba(0, 0, 0, 0.6));
+}
+
+.crosshair--active {
+  background: var(--ui-accent);
+  box-shadow:
+    -6px -6px 0 0 var(--ui-accent), -4px -6px 0 0 var(--ui-accent), -6px -4px 0 0 var(--ui-accent),
+    6px -6px 0 0 var(--ui-accent), 4px -6px 0 0 var(--ui-accent), 6px -4px 0 0 var(--ui-accent),
+    -6px 6px 0 0 var(--ui-accent), -4px 6px 0 0 var(--ui-accent), -6px 4px 0 0 var(--ui-accent),
+    6px 6px 0 0 var(--ui-accent), 4px 6px 0 0 var(--ui-accent), 6px 4px 0 0 var(--ui-accent);
+}
+
+/* Aviso de interacción bajo la mira: tecla en recuadro + acción. */
+.prompt {
+  position: absolute;
+  top: calc(50% + 22px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  background: var(--ui-panel);
+  border: 3px solid rgba(244, 248, 251, 0.6);
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.45);
+  font-family: var(--ui-font);
+  font-size: 10px;
+  color: var(--ui-text);
+  white-space: nowrap;
+}
+
+.prompt__key {
+  padding: 3px 5px 2px;
+  background: var(--ui-text);
+  color: #141c26;
+  box-shadow: inset -2px -2px 0 #9aa8b8;
 }
 
 @keyframes blink {

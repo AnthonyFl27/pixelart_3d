@@ -6,6 +6,7 @@ const CONTROLS = [
   ['Shift', 'Correr'],
   ['Espacio', 'Saltar / subir'],
   ['C / Ctrl', 'Bajar (vuelo)'],
+  ['E', 'Interactuar'],
   ['F', 'Modo vuelo'],
   ['1 - 5 / Rueda', 'Inventario'],
   ['Q', 'Guardar objeto'],

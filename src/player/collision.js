@@ -72,6 +72,33 @@ function distanceSq(c, x, z) {
   return dx * dx + dz * dz;
 }
 
+// ¿El círculo (x, z, radio) se solapa con el rectángulo de la caja en XZ?
+export function circleOverlapsBox(c, x, z, radius) {
+  return distanceSq(c, x, z) < radius * radius;
+}
+
+// Distancia a lo largo del rayo (origen y dirección unitaria en mundo) hasta la caja,
+// o Infinity si no la corta antes de `far` o si el origen está dentro.
+export function rayBoxDistance(c, origin, direction, far) {
+  const [ox, oz] = toLocal(c, origin.x, origin.z);
+  const dx = direction.x * c.cos - direction.z * c.sin;
+  const dz = direction.x * c.sin + direction.z * c.cos;
+  let near = -Infinity;
+  let exit = Infinity;
+  for (const [o, d, min, max] of [[ox, dx, -c.hx, c.hx], [origin.y, direction.y, c.minY, c.maxY], [oz, dz, -c.hz, c.hz]]) {
+    if (Math.abs(d) < 1e-9) {
+      if (o < min || o > max) return Infinity;
+      continue;
+    }
+    const t0 = (min - o) / d;
+    const t1 = (max - o) / d;
+    near = Math.max(near, Math.min(t0, t1));
+    exit = Math.min(exit, Math.max(t0, t1));
+  }
+  if (near > exit || near < 0 || near > far) return Infinity;
+  return near;
+}
+
 // Empuja la posición fuera de las cajas que se solapan en altura con el jugador.
 // Las cajas con techo por debajo de feetY + stepHeight se ignoran (se pueden pisar).
 export function resolveHorizontal(position, { radius, height, stepHeight }, colliders) {

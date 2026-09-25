@@ -73,13 +73,17 @@ pixelart_3d/
 │   ├── items/
 │   │   ├── inventory.js        # Ranuras, selección y catálogo de objetos
 │   │   └── torch.js            # Antorcha en primera persona: llama, chispas y luz
+│   ├── interaction/
+│   │   ├── interaction.js      # Rayo desde la cámara, objeto apuntado, tecla E y tipos interactivos
+│   │   └── door.js             # Puerta con bisagra, animación, colisión que gira y bloqueo
 │   ├── fauna/birds.js          # Pájaros: bandadas, posado, actividad según la hora
 │   ├── levels/meadow.js        # Nivel como datos (spawn, caminos, relieve, estructuras)
-│   ├── ui/                     # overlay.js (inicio/pausa), hud.js (F3), hotbar.js, ui.css
+│   ├── ui/                     # overlay.js (inicio/pausa), hud.js (F3), hotbar.js, prompt.js (mira y aviso [E]), ui.css
 │   └── audio/
 │       ├── ambient.js          # Viento, trinos y bus maestro (Web Audio)
 │       ├── footsteps.js        # Pasos por superficie (césped, tierra, piedra)
-│       └── water.js            # Sonido procedural del riachuelo según distancia y dirección
+│       ├── water.js            # Sonido procedural del riachuelo según distancia y dirección
+│       └── sfx.js              # Efectos con posición: chirrido de bisagra, golpe y pestillo
 ├── sdd/                        # Spec-Driven Development
 │   ├── specs/spec_v1.md        # Especificación del prototipo
 │   ├── specs/spec_v2.md        # Mundo vivo: día/noche, antorcha, fauna y entorno
@@ -101,6 +105,10 @@ pixelart_3d/
   con volúmenes con nombre (p. ej. el interior de la cabaña).
 - **Cabaña:** dimensiones, huecos de puerta y ventanas, tejado, porche y chimenea en `CONFIG.cabin`;
   cualquier clave se puede sobrescribir en la entrada `cabin` del nivel.
+- **Nuevo objeto interactivo:** añadir un tipo a `INTERACTABLE_TYPES` en `src/interaction/interaction.js`
+  (objeto con `meshes`, `prompt()`, `interact()` y opcionalmente `object`, `collider` y `update()`) y
+  declararlo como dato: las estructuras devuelven `interactables: [{ type, position, rotationY, … }]`.
+  Las puertas de la cabaña están en `CONFIG.cabin.doors`.
 - **Nuevo objeto de inventario:** añadirlo a `ITEMS` en `src/items/inventory.js` (con icono 16x16)
   y su comportamiento en `main.js` según `inventory.activeItem`.
 - **Hora del día:** keyframes de color y luz en `CONFIG.dayCycle.keyframes`; duración en `dayLength`.
@@ -134,10 +142,12 @@ pixelart_3d/
   Riachuelo: `?pos=-53,20,1.2` (orilla este) y `?pos=-60,40,0.1` (dentro del agua).
   Puente: `?pos=-48,12,1.57` (rampa este) y `?pos=-59,27,0.1` (vista desde el agua).
   Cabaña: `?pos=-74,10,1.57` (delante del porche) y `?pos=-93,19,-0.92` (trasera y chimenea).
-- `F3` muestra también la zona (`cabin` dentro de la cabaña, `exterior` fuera).
+- `F3` muestra también la zona (`cabin` dentro de la cabaña, `exterior` fuera) y el objeto apuntado.
+- Puertas: `?pos=-76.2,10.3,1.57` (porche, delante de la puerta principal) y `?pos=-87.5,7.5,-1.57`
+  (escalones de la puerta trasera de la cocina). `E` abre y cierra; no se cierran con el jugador en el recorrido.
 - Mantener `T` acelera el tiempo.
 - Revisar visualmente contra la imagen/video de referencia.
-- Comprobar controles: movimiento, cámara, salto, colisión con estructuras, pausa, inventario y antorcha.
+- Comprobar controles: movimiento, cámara, salto, colisión con estructuras, pausa, inventario, antorcha y puertas.
 
 ## Commits
 

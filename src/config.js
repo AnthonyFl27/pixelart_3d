@@ -480,12 +480,17 @@ export const CONFIG = {
     cornerBoard: 0.18,
     trimWidth: 0.1,          // marcos de puerta y ventanas
     wallColliderDepth: 0.12,
-    door: { wall: 'front', x: -0.4, width: 1, height: 2.1 },
+    // Puertas: `hinge` ('left' | 'right', vista desde fuera); abren hacia dentro.
+    // `stairs`: 'porch' (escalones del porche) o 'ground' (escalones hasta el terreno).
+    doors: [
+      { wall: 'front', x: -0.4, width: 1, height: 2.1, hinge: 'left', stairs: 'porch', name: 'main' },
+      { wall: 'back', x: -2.5, width: 0.9, height: 2.1, hinge: 'right', stairs: 'ground', name: 'kitchen' },
+    ],
     windows: [
       { wall: 'front', x: -2.9, width: 1.1, bottom: 0.95, top: 2.15, cols: 2, rows: 2, shutters: true, brokenPane: 1 },
       { wall: 'front', x: 2.9, width: 1.1, bottom: 0.95, top: 2.15, cols: 2, rows: 2, shutters: true, crookedShutter: 1 },
       { wall: 'right', x: -0.5, width: 0.9, bottom: 1.1, top: 2.15, cols: 2, rows: 2 },
-      { wall: 'back', x: -3, width: 0.9, bottom: 1.25, top: 2.15, cols: 2, rows: 1 },
+      { wall: 'back', x: -3.75, width: 0.8, bottom: 1.25, top: 2.15, cols: 2, rows: 1 },
       { wall: 'back', x: 2, width: 1, bottom: 0.95, top: 2.15, cols: 2, rows: 2, shutters: true, crookedShutter: -1 },
       { wall: 'left', x: 2.3, width: 0.7, bottom: 1.25, top: 2.15, cols: 1, rows: 2 },
     ],
@@ -614,6 +619,30 @@ export const CONFIG = {
     windVolume: 0.3,
     chirpVolume: 0.05,     // trinos: volumen bajo y filtrados para no ser chillones
     chirpLowpass: 4200,
+    // Efectos puntuales con posición en el espacio (src/audio/sfx.js).
+    sfx: {
+      volume: 0.8,
+      refDistance: 1.5,
+      rolloff: 1.3,
+      maxDistance: 40,
+      creak: {
+        frequency: [230, 380], // tono base con variación aleatoria (Hz)
+        glide: 0.35,           // variación del tono durante el chirrido (fracción)
+        flutter: [14, 30],     // "tirones" de la bisagra por segundo
+        q: 8,
+        gain: 1,               // la banda estrecha deja pasar poca energía
+        closeGain: 0.5,        // chirrido más suave al cerrar
+      },
+      slam: {
+        thump: 72,             // golpe grave (Hz)
+        thumpGain: 0.9,
+        bodyLowpass: 700,
+        bodyGain: 0.6,
+        latchDelay: 0.05,      // clic del pestillo tras el golpe (s)
+        latchFrequency: 2600,
+        latchGain: 0.35,
+      },
+    },
     // Riachuelo (src/audio/water.js): volumen según la distancia a la orilla más cercana.
     water: {
       volume: 0.55,
@@ -697,6 +726,25 @@ export const CONFIG = {
     flapAmplitude: 0.32,
     chirpInterval: [2.5, 8],
     chirpDistance: 35,
+  },
+
+  // Sistema de interacción (src/interaction/): rayo desde el centro de la cámara.
+  interaction: {
+    reach: 2.2,            // alcance (u) desde la cámara
+    key: 'KeyE',
+    occlusionMargin: 0.05, // un colisionador tapa al objeto si está este tanto por delante (u)
+  },
+
+  // Puertas con bisagra (src/interaction/door.js).
+  door: {
+    openAngle: 95,         // grados, hacia dentro
+    duration: 0.6,         // segundos de apertura o cierre
+    thickness: 0.05,
+    boards: 4,             // tablas verticales de la hoja
+    battenHeight: 0.1,
+    handleHeight: 1,
+    sweepSamples: 8,       // muestras del recorrido para detectar al jugador
+    colliderPadding: 0.01,
   },
 
   inventory: {

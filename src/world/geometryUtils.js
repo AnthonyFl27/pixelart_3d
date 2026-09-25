@@ -34,3 +34,30 @@ export function extrudeAcross(shape, width) {
   geometry.computeVertexNormals();
   return applyBoxUVs(geometry);
 }
+
+// UVs de tabla: cada pieza muestra una sola fila de la textura `planks` con un
+// desplazamiento aleatorio a lo largo. `vertical`: la veta sigue el eje Y.
+// La geometría debe estar centrada en el eje transversal a la veta.
+export function plankUVs(geometry, random, vertical = false) {
+  applyBoxUVs(geometry);
+  const { size, planks } = CONFIG.textures;
+  const rows = size / planks.rowHeight;
+  const du = Math.floor(random() * size) / size;
+  const dv = 1 - (Math.floor(random() * rows) * planks.rowHeight + planks.rowHeight / 2) / size;
+  const uv = geometry.attributes.uv;
+  for (let i = 0; i < uv.count; i++) {
+    const u = uv.getX(i);
+    const v = uv.getY(i);
+    if (vertical) uv.setXY(i, v + du, u + dv);
+    else uv.setXY(i, u + du, v + dv);
+  }
+  return geometry;
+}
+
+// Todas las UVs sobre la junta oscura de la textura `planks` (color liso: herrajes).
+export function seamUVs(geometry) {
+  const { size } = CONFIG.textures;
+  const uv = geometry.attributes.uv;
+  for (let i = 0; i < uv.count; i++) uv.setXY(i, 0.5 / size, 1 - 0.5 / size);
+  return geometry;
+}

@@ -18,7 +18,8 @@ import { createZone } from './zones.js';
 // cara superior de la caja a lo largo de su eje X local (rampas). Una pieza con
 // `geometry: null` solo aporta colisionadores.
 // Un tipo puede devolver también `zones: [{ name, min, max }]`: volúmenes con nombre en
-// coordenadas locales (p. ej. el interior de la cabaña).
+// coordenadas locales (p. ej. el interior de la cabaña), e `interactables: [{ type,
+// position, rotationY, ... }]`: objetos interactivos como datos (src/interaction/).
 
 const noise = new ValueNoise2D(deriveSeed(CONFIG.seed, 'structures'));
 
@@ -344,7 +345,13 @@ export function createStructure(entry, index, { terrain, materials }) {
     }
   }
   const zones = (Array.isArray(built) ? [] : built.zones ?? []).map((zone) => createZone(zone, group));
-  return { group, colliders, zones };
+  const interactables = (Array.isArray(built) ? [] : built.interactables ?? []).map((item) => ({
+    ...item,
+    position: new THREE.Vector3().fromArray(item.position).applyMatrix4(group.matrixWorld).toArray(),
+    rotationY: (item.rotationY ?? 0) + rotationY,
+    scale,
+  }));
+  return { group, colliders, zones, interactables };
 }
 
 // Altura mínima del terreno bajo la huella de la estructura (grupo ya colocado en x, z).

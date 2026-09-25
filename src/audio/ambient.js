@@ -1,9 +1,10 @@
 import { CONFIG } from '../config.js';
 import { Footsteps } from './footsteps.js';
 import { WaterAudio } from './water.js';
+import { Sfx } from './sfx.js';
 
-// Audio procedural con Web Audio (sin archivos): viento de fondo, pasos (footsteps.js)
-// y riachuelo (water.js). El oyente sigue a la cámara para las fuentes posicionales.
+// Audio procedural con Web Audio (sin archivos): viento de fondo, pasos (footsteps.js),
+// riachuelo (water.js) y efectos puntuales (sfx.js). El oyente sigue a la cámara para las fuentes posicionales.
 // El AudioContext se crea en `start()`, que debe llamarse tras un gesto del usuario.
 export class AmbientAudio {
   constructor() {
@@ -29,6 +30,7 @@ export class AmbientAudio {
     this.createWind(ctx);
     this.footsteps = new Footsteps(ctx, this.master);
     this.water = new WaterAudio(ctx, this.master);
+    this.sfx = new Sfx(ctx, this.master);
     this.forward = { x: 0, y: 0, z: -1 };
   }
 
@@ -62,6 +64,12 @@ export class AmbientAudio {
   updateWater(dt, position, stream) {
     if (!this.water || !stream || this.context.state !== 'running') return;
     this.water.update(dt, position, stream.nearest(position.x, position.z), stream.rapidPoints());
+  }
+
+  // Efecto de sfx.js ('creak', 'slam'…) en `position`.
+  playSfx(name, position, options) {
+    if (!this.sfx || this.muted || this.context.state !== 'running') return;
+    this.sfx[name](position, options);
   }
 
   suspend() {
