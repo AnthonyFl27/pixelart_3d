@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { CONFIG } from '../config.js';
-import { HeightField, createFeatures } from './terrainFeatures.js';
+import { HeightField, createFeatures, createFlattenModifier } from './terrainFeatures.js';
 import { GroundMap } from './groundMap.js';
 import { StreamCourse } from './stream.js';
 
@@ -20,6 +20,10 @@ export class Terrain {
 
     this.features = createFeatures(level);
     this.heightField = new HeightField(level, this.features);
+    // Zonas despejadas que se allanan (cabaña) y, después, el cauce.
+    for (const zone of level.clearZones ?? []) {
+      if (zone.flatten) this.heightField.addFeature(createFlattenModifier(zone, this.heightField));
+    }
     // El cauce se calcula sobre el terreno sin él y después lo recorta.
     this.stream = level.stream ? new StreamCourse(level.stream, this.heightField, level.clearZones) : null;
     if (this.stream) {

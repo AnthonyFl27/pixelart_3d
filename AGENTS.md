@@ -62,7 +62,7 @@ pixelart_3d/
 │   │   ├── dayCycle.js         # Reloj del mundo: hora, fase, sol/luna y colores por keyframes
 │   │   ├── sky.js              # Cúpula de cielo: degradado, nubes, sol, luna y estrellas
 │   │   ├── lighting.js         # Sol/luna con sombras, ambiente y luz de relleno según la hora
-│   │   ├── structures.js       # Fábrica de estructuras: piedras, escombros, árboles
+│   │   ├── structures.js       # Fábrica de estructuras: piedras, escombros, árboles, puente, leñera, valla
 │   │   ├── vegetation.js       # Pasto alto y flores instanciados con viento
 │   │   └── levelLoader.js      # Instancia un nivel y fusiona las piezas por material
 │   ├── player/
@@ -92,8 +92,9 @@ pixelart_3d/
 
 - **Nueva estructura en el nivel:** añadir una entrada a `structures` en `src/levels/meadow.js`.
 - **Nuevo tipo de estructura:** añadir una función a `STRUCTURE_TYPES` en `src/world/structures.js`
-  que devuelva piezas `{ geometry, position, rotationY, material, collider, groundAt }`.
-  Colisiones, sombras y fusión por material son automáticas.
+  que devuelva piezas `{ geometry, position, rotationY, material, collider, surface, groundAt }`.
+  Colisiones, sombras y fusión por material son automáticas. `collider` admite cajas explícitas
+  (con `rise` para rampas) y el tipo recibe `ground(lx, lz)` para consultar el terreno.
 - **Nuevo objeto de inventario:** añadirlo a `ITEMS` en `src/items/inventory.js` (con icono 16x16)
   y su comportamiento en `main.js` según `inventory.activeItem`.
 - **Hora del día:** keyframes de color y luz en `CONFIG.dayCycle.keyframes`; duración en `dayLength`.
@@ -125,6 +126,7 @@ pixelart_3d/
 - `F3` muestra FPS, hora, posición, resolución interna, draw calls, triángulos y pájaros.
 - Parámetros de URL para probar: `?hora=19.5` (hora inicial) y `?pos=x,z,yaw` (posición inicial).
   Riachuelo: `?pos=-53,20,1.2` (orilla este) y `?pos=-60,40,0.1` (dentro del agua).
+  Puente: `?pos=-48,12,1.57` (rampa este) y `?pos=-59,27,0.1` (vista desde el agua).
 - Mantener `T` acelera el tiempo.
 - Revisar visualmente contra la imagen/video de referencia.
 - Comprobar controles: movimiento, cámara, salto, colisión con estructuras, pausa, inventario y antorcha.

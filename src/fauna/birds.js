@@ -347,7 +347,7 @@ export class Birds {
 function createPerches(colliders, random) {
   const perches = [];
   for (const c of colliders) {
-    if (c.maxY < CONFIG.birds.perchHeight) continue;
+    if (c.maxY < CONFIG.birds.perchHeight || c.slope || c.surface !== 'stone') continue;
     const slots = c.hx > 1 ? 2 : 1;
     for (let s = 0; s < slots; s++) {
       const lx = (random() - 0.5) * c.hx * 1.2;

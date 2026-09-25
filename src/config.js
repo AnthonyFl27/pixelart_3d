@@ -241,6 +241,31 @@ export const CONFIG = {
       speckleLight: 0.08,
       speckleDark: 0.1,
     },
+    leavesAutumn: {
+      colors: [0x6a2410, 0x8c3412, 0xb04a18, 0xcc6420, 0xe08a34],
+      frequency: 5,
+      octaves: 3,
+      blotchWeight: 0.5,
+      speckleLight: 0.06,
+      speckleDark: 0.08,
+    },
+    // Madera gastada: vetas a lo largo del eje U (frecuencia [fx, fy]).
+    wood: {
+      colors: [0x4a4038, 0x5e5246, 0x726455, 0x857665, 0x9a8a76],
+      frequency: [2, 24],
+      octaves: 2,
+      blotchWeight: 0.75,
+      speckleLight: 0.01,
+      speckleDark: 0.04,
+    },
+    // Mampostería del puente: bloques oscuros con mortero.
+    masonry: {
+      colors: [0x3e3c3e, 0x4c4a4c, 0x5a585a, 0x6a6868, 0x7a7876],
+      mortar: 0x262426,
+      rowHeight: [4, 6],     // texels
+      blockWidth: [6, 12],   // texels
+      grain: 0.8,
+    },
     moss: {
       colors: [0x3d5a1e, 0x4f6e24, 0x62802c, 0x7a9636],
       frequency: 4,
@@ -278,6 +303,7 @@ export const CONFIG = {
     irregularityScale: 0.35,
     hollowGround: 0.55,    // fracción del radio de un hundimiento con fondo de tierra/barro
     gullyGround: 0.4,      // fracción del ancho de un surco con fondo de grava
+    flattenCore: 0.55,     // fracción del radio de una zona allanada que queda plana del todo
     // Tierra acumulada al pie de las piedras: radio y altura por tipo (boulder: × radio).
     structureDirt: {
       trilithon: { radius: 3.4, height: 0.22, amount: 0.8 },
@@ -381,6 +407,11 @@ export const CONFIG = {
     taper: 0.12,           // estrechamiento de los pilares hacia arriba (0-1)
   },
 
+  bridge: {
+    archSegments: 10,      // segmentos de cada arco
+    rampLip: 0.03,         // la rampa sobresale este tanto sobre el terreno en su extremo
+  },
+
   // Musgo/liquen sobre las piedras: aparece en caras hacia arriba, en el lado
   // norte (+Z, a la sombra) y cerca del suelo, con borde irregular por ruido.
   moss: {
@@ -390,6 +421,16 @@ export const CONFIG = {
     noiseWeight: 1.0,
     noiseScale: 0.45,
     threshold: 0.93,       // más alto = menos musgo
+  },
+
+  // Musgo del puente: solo en la parte baja y en manchas sueltas.
+  masonryMoss: {
+    upWeight: 0.2,
+    northWeight: 0.15,
+    groundWeight: 0.45,
+    noiseWeight: 1.0,
+    noiseScale: 0.4,
+    threshold: 1.05,
   },
 
   // Pasto alto y flores (InstancedMesh). Se colocan alrededor del centro del nivel.

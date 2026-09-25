@@ -20,11 +20,16 @@ export function createMaterials(textures) {
   const gradientMap = createToonGradient(CONFIG.lighting.toonSteps);
   const toon = (map) => new THREE.MeshToonMaterial({ map, gradientMap });
   const stone = toon(textures.stone);
-  addMoss(stone, textures);
+  addMoss(stone, textures, CONFIG.moss);
+  const masonry = toon(textures.masonry);
+  addMoss(masonry, textures, CONFIG.masonryMoss);
   return {
     gradientMap,
     stone,
     wetStone: toon(textures.wetStone),
+    masonry,
+    wood: toon(textures.wood),
+    leavesAutumn: toon(textures.leavesAutumn),
     grass: toon(textures.grass),
     dirt: toon(textures.dirt),
     bark: toon(textures.bark),
@@ -32,10 +37,10 @@ export function createMaterials(textures) {
   };
 }
 
-// Mezcla la textura de musgo sobre la piedra según orientación, altura y ruido.
-// La máscara se evalúa en la rejilla de texels para que el borde quede pixelado.
-function addMoss(material, textures) {
-  const m = CONFIG.moss;
+// Mezcla la textura de musgo sobre la piedra según orientación, altura sobre la base de
+// la estructura (atributo aBaseHeight) y ruido. La máscara se evalúa en la rejilla de
+// texels para que el borde quede pixelado.
+function addMoss(material, textures, m) {
   const uniforms = {
     uMossMap: { value: textures.moss },
     uMossNoise: { value: textures.noise },
@@ -47,14 +52,16 @@ function addMoss(material, textures) {
   material.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, uniforms);
     shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nvarying vec3 vMossPos;\nvarying vec3 vMossNormal;')
+      .replace('#include <common>', '#include <common>\nattribute float aBaseHeight;\nvarying vec3 vMossPos;\nvarying vec3 vMossNormal;\nvarying float vMossHeight;')
       .replace('#include <project_vertex>', `#include <project_vertex>
         vMossPos = (modelMatrix * vec4(transformed, 1.0)).xyz;
-        vMossNormal = normalize(mat3(modelMatrix) * objectNormal);`);
+        vMossNormal = normalize(mat3(modelMatrix) * objectNormal);
+        vMossHeight = aBaseHeight;`);
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', `#include <common>
         varying vec3 vMossPos;
         varying vec3 vMossNormal;
+        varying float vMossHeight;
         uniform sampler2D uMossMap;
         uniform sampler2D uMossNoise;
         uniform float uMossTexels;
@@ -67,7 +74,7 @@ function addMoss(material, textures) {
         vec3 mossNormal = normalize(vMossNormal);
         float mossAmount = max(mossNormal.y, 0.0) * uMossWeights.x
           + max(mossNormal.z, 0.0) * uMossWeights.y
-          + (1.0 - smoothstep(0.0, 0.9, mossPos.y)) * uMossWeights.z
+          + (1.0 - smoothstep(0.0, 0.9, vMossHeight)) * uMossWeights.z
           + mossNoise * uMossWeights.w;
         if (mossAmount > uMossThreshold) diffuseColor.rgb = texture2D(uMossMap, vMapUv).rgb;`);
   };

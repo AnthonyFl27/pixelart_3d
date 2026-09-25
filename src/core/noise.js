@@ -39,10 +39,13 @@ export class ValueNoise2D {
     }
   }
 
+  // period: número (igual en ambos ejes) o [periodoX, periodoY].
   lattice(ix, iy, period) {
     if (period) {
-      ix = ((ix % period) + period) % period;
-      iy = ((iy % period) + period) % period;
+      const px = Array.isArray(period) ? period[0] : period;
+      const py = Array.isArray(period) ? period[1] : period;
+      ix = ((ix % px) + px) % px;
+      iy = ((iy % py) + py) % py;
     }
     const p = this.perm;
     return this.values[p[(p[ix & 255] + iy) & 255]];
@@ -73,7 +76,8 @@ export class ValueNoise2D {
     let total = 0;
     let frequency = 1;
     for (let i = 0; i < octaves; i++) {
-      sum += this.noise(x * frequency, y * frequency, period ? period * frequency : 0) * amplitude;
+      const scaled = Array.isArray(period) ? [period[0] * frequency, period[1] * frequency] : period * frequency;
+      sum += this.noise(x * frequency, y * frequency, period ? scaled : 0) * amplitude;
       total += amplitude;
       amplitude *= gain;
       frequency *= lacunarity;

@@ -329,6 +329,27 @@ export function createFeatures(level, extra = []) {
   ];
 }
 
+// Allana una zona despejada ({ x, z, radius, flatten: 0-1 }) hacia la altura de su centro.
+// Se calcula sobre el terreno ya generado, así que se añade después de crear el HeightField.
+export function createFlattenModifier(zone, heightField) {
+  const target = heightField.sample(zone.x, zone.z);
+  const inner = zone.radius * CONFIG.terrain.flattenCore;
+  return {
+    ...circleBounds(zone.x, zone.z, zone.radius),
+    detail: 'mid',
+    apply(x, z, height) {
+      const d = Math.hypot(x - zone.x, z - zone.z);
+      const t = 1 - THREE.MathUtils.smoothstep(d, inner, zone.radius);
+      return THREE.MathUtils.lerp(height, target, t * zone.flatten);
+    },
+    detailIn(minX, minZ, maxX, maxZ) {
+      const cx = THREE.MathUtils.clamp(zone.x, minX, maxX);
+      const cz = THREE.MathUtils.clamp(zone.z, minZ, maxZ);
+      return Math.hypot(cx - zone.x, cz - zone.z) < zone.radius ? 'mid' : 'base';
+    },
+  };
+}
+
 // Función de altura analítica del terreno. `sample` es la altura "ideal"; la malla
 // la muestrea en su rejilla y `Terrain.getHeight` interpola esa triangulación.
 export class HeightField {

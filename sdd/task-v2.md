@@ -39,12 +39,12 @@ Leyenda: `[ ]` pendiente · `[x]` completada · `[~]` en progreso
 - [x] Reubicar elementos del nivel que choquen con el cauce
 
 ## Fase 16 — Puente, camino y entorno de la cabaña
-- [ ] Tipo `archBridge`: dos arcos, pilas, pretiles y tablero con rampas (`groundAt`)
-- [ ] Paso bajo los arcos vadeando el agua
-- [ ] Campo `surface` por pieza en los colisionadores
-- [ ] Camino círculo → puente → porche en `meadow.js`
-- [ ] Variante otoñal del árbol (copa naranja) junto a la cabaña
-- [ ] Tipos `woodpile` (leñera) y `fence` (valla rota)
+- [x] Tipo `archBridge`: dos arcos, pilas, pretiles y tablero con rampas (`groundAt`)
+- [x] Paso bajo los arcos vadeando el agua
+- [x] Campo `surface` por pieza en los colisionadores
+- [x] Camino círculo → puente → porche en `meadow.js`
+- [x] Variante otoñal del árbol (copa naranja) junto a la cabaña
+- [x] Tipos `woodpile` (leñera) y `fence` (valla rota)
 
 ## Fase 17 — Cabaña: exterior y estructura
 - [ ] Texturas: tablas gastadas, tablillas, chapa oxidada, celosía y cristal sucio

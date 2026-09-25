@@ -26,6 +26,21 @@ export const MEADOW = {
         { x: -0.2, z: 16.8, width: 1.3 },
       ],
     },
+    {
+      // Del camino de entrada, rodeando el círculo por el sur, al puente y al porche de la cabaña.
+      name: 'cabaña',
+      points: [
+        { x: 0.3, z: 25.5, width: 1.2 },
+        { x: -6, z: 25, width: 1.1 },
+        { x: -15, z: 22, width: 1.2 },
+        { x: -25, z: 18.5, width: 1 },
+        { x: -35, z: 15, width: 1.2 },
+        { x: -45, z: 13, width: 1.1 },
+        { x: -52, z: 12.2, width: 1.3 },
+        { x: -70, z: 11.8, width: 1.3 },
+        { x: -72.5, z: 10.5, width: 1.1 },
+      ],
+    },
   ],
 
   // Riachuelo de norte a sur por el oeste (src/world/stream.js).
@@ -50,13 +65,15 @@ export const MEADOW = {
   // Vegetación (src/world/vegetation.js): zonas y peso de cada una en el reparto.
   //   { x, z, radius, weight } círculo · { stream: true, band: [min, max], weight } franja en las orillas
   vegetationAreas: [
-    { x: 0, z: 0, radius: 85, weight: 0.78 },
-    { stream: true, band: [0.4, 4], weight: 0.22 },
+    { x: 0, z: 0, radius: 85, weight: 0.72 },
+    { stream: true, band: [0.4, 4], weight: 0.2 },
+    { x: -80, z: 10, radius: 22, weight: 0.08 },
   ],
 
   // Zonas sin relieve procedural (la cabaña y el puente necesitan suelo tranquilo).
+  // `flatten` (0-1) allana además el terreno hacia la altura del centro.
   clearZones: [
-    { x: -78, z: 10, radius: 16 },
+    { x: -78, z: 10, radius: 16, flatten: 0.85 },
     { x: -60, z: 12, radius: 10 },
   ],
 
@@ -104,6 +121,9 @@ export const MEADOW = {
   //   rubble      { radius, count, minSize, maxSize }   piedras pequeñas sin colisión
   //   tree        { height, crownRadius, trunkRadius, lobes }
   //   grove       { radius, count, minHeight, maxHeight } bosquecillo
+  //   archBridge  { arches, span, pier, abutment, width, headroom, rampLength } puente de piedra (eje X local)
+  //   woodpile    { length, rows }                    leñera
+  //   fence       { length, spacing, height, broken } valla de madera rota (eje X local)
   // Comunes: x, z, rotationY (rad), scale.
   structures: [
     // Anillo de trilitos (radio ≈ 14), orientados hacia el centro.
@@ -161,6 +181,18 @@ export const MEADOW = {
     { type: 'rubble', x: 5.5, z: -2.0, radius: 1.8, count: 7 },
     { type: 'rubble', x: 15.0, z: 11.0, radius: 1.5, count: 6 },
     { type: 'rubble', x: 0, z: 0, radius: 7, count: 18, maxSize: 0.2 },
+
+    // Zona del riachuelo: puente de dos arcos (cruza de este a oeste) y entorno de la cabaña.
+    { type: 'archBridge', x: -61, z: 12, rotationY: 0, arches: 2, span: 2.6, pier: 0.9 },
+    { type: 'tree', x: -71, z: 24, height: 8, crownRadius: 3.2, lobes: 7, autumn: true },
+    { type: 'tree', x: -91, z: 3, height: 9 },
+    { type: 'tree', x: -89, z: 25, height: 7.5 },
+    { type: 'tree', x: -84, z: -8, height: 6.5, autumn: true },
+    { type: 'woodpile', x: -84, z: 17.5, rotationY: 0.1, length: 1.8, rows: 4 },
+    { type: 'fence', x: -79, z: -3, rotationY: 0.05, length: 16, broken: 0.4 },
+    { type: 'fence', x: -87.5, z: 5, rotationY: -1.52, length: 14, broken: 0.5 },
+    { type: 'boulder', x: -68, z: 4, radius: 0.9, sink: 0.4 },
+    { type: 'rubble', x: -70.5, z: 13.5, radius: 1.4, count: 6 },
 
     // Árboles: uno solitario destacado, algunos sueltos y bosquecillos en el horizonte.
     { type: 'tree', x: 30, z: -26, height: 9.5, crownRadius: 3.5, lobes: 6 },

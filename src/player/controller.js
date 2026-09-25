@@ -109,7 +109,7 @@ export class PlayerController {
   }
 
   get surface() {
-    if (this.onStructure) return 'stone';
+    if (this.onStructure) return this.structureSurface;
     if (this.inWater) return 'water';
     return this.terrain.getSurface(this.position.x, this.position.z);
   }
@@ -154,8 +154,9 @@ export class PlayerController {
       this.velocity.y = 0;
     }
 
-    const { height: ground, onStructure } = groundInfo(this.position, this.body, this.colliders, this.terrain);
+    const { height: ground, onStructure, surface } = groundInfo(this.position, this.body, this.colliders, this.terrain);
     this.onStructure = onStructure;
+    this.structureSurface = surface;
     this.inWater = !onStructure && this.waterDepth > CONFIG.player.wadeMinDepth;
     // Pegarse al suelo al bajar pendientes o escalones en lugar de "despegar".
     const snap = wasOnGround && this.velocity.y <= 0 && this.position.y - ground < this.body.stepHeight;

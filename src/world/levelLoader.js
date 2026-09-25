@@ -13,10 +13,16 @@ export function loadLevel(level, { scene, terrain, materials }) {
   level.structures.forEach((entry, index) => {
     const structure = createStructure(entry, index, { terrain, materials });
     colliders.push(...structure.colliders);
+    const baseY = structure.group.position.y;
     structure.group.traverse((object) => {
       if (!object.isMesh) return;
       const geometry = object.geometry.index ? object.geometry.toNonIndexed() : object.geometry.clone();
       geometry.applyMatrix4(object.matrixWorld);
+      // Altura sobre la base de la estructura (el musgo crece cerca del suelo).
+      const position = geometry.attributes.position;
+      const baseHeight = new Float32Array(position.count);
+      for (let i = 0; i < position.count; i++) baseHeight[i] = position.getY(i) - baseY;
+      geometry.setAttribute('aBaseHeight', new THREE.BufferAttribute(baseHeight, 1));
       if (!geometriesByMaterial.has(object.material)) geometriesByMaterial.set(object.material, []);
       geometriesByMaterial.get(object.material).push(geometry);
       object.geometry.dispose();

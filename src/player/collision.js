@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 
 // Colisionadores: cajas orientadas en el plano XZ con rango vertical [minY, maxY].
+// Una caja puede tener la cara superior inclinada a lo largo de su eje X local (rampas):
+// techo(lx) = top + slope * lx. `surface` indica el sonido de los pasos encima.
 // El jugador es un cilindro vertical (círculo de radio r en XZ + altura).
 
 const tmpBox = new THREE.Box3();
@@ -9,9 +11,16 @@ const tmpSize = new THREE.Vector3();
 
 // Caja a partir de la geometría de una pieza (bounding box local) y su transformación.
 // Soporta rotación solo en Y y escala uniforme (como generan las estructuras).
-export function createBoxCollider(mesh, group) {
-  mesh.geometry.computeBoundingBox();
-  tmpBox.copy(mesh.geometry.boundingBox);
+// `box` (opcional): caja explícita en el espacio local de la pieza en lugar del bounding box.
+// `rise`: la cara superior sube `rise` de -X a +X (local); el bounding box es la parte alta.
+export function createBoxCollider(mesh, group, { box, rise = 0, surface = 'stone' } = {}) {
+  if (box) {
+    tmpBox.min.fromArray(box.min);
+    tmpBox.max.fromArray(box.max);
+  } else {
+    mesh.geometry.computeBoundingBox();
+    tmpBox.copy(mesh.geometry.boundingBox);
+  }
   tmpBox.getCenter(tmpCenter);
   tmpBox.getSize(tmpSize);
 
@@ -19,17 +28,29 @@ export function createBoxCollider(mesh, group) {
   const rotation = group.rotation.y + mesh.rotation.y;
   // Centro de la caja en espacio de mundo.
   tmpCenter.applyMatrix4(mesh.matrixWorld);
+  const hx = (tmpSize.x / 2) * scale;
+  const maxY = tmpCenter.y + (tmpSize.y / 2) * scale;
+  const slope = hx > 0 ? (rise * scale) / (2 * hx) : 0;
 
   return {
     cx: tmpCenter.x,
     cz: tmpCenter.z,
-    hx: (tmpSize.x / 2) * scale,
+    hx,
     hz: (tmpSize.z / 2) * scale,
     cos: Math.cos(rotation),
     sin: Math.sin(rotation),
     minY: tmpCenter.y - (tmpSize.y / 2) * scale,
-    maxY: tmpCenter.y + (tmpSize.y / 2) * scale,
+    maxY,
+    top: maxY - Math.abs(slope) * hx, // altura de la cara superior en el centro
+    slope,
+    surface,
   };
+}
+
+// Altura de la cara superior en la coordenada local lx (limitada a la caja).
+function topAt(c, lx) {
+  if (!c.slope) return c.maxY;
+  return c.top + c.slope * THREE.MathUtils.clamp(lx, -c.hx, c.hx);
 }
 
 // Mundo -> espacio local de la caja (rotación Y de three.js invertida).
@@ -60,6 +81,7 @@ export function resolveHorizontal(position, { radius, height, stepHeight }, coll
     for (const c of colliders) {
       if (c.maxY <= feet + stepHeight || c.minY >= feet + height) continue;
       let [lx, lz] = toLocal(c, position.x, position.z);
+      if (c.slope && topAt(c, lx) <= feet + stepHeight) continue;
       const qx = THREE.MathUtils.clamp(lx, -c.hx, c.hx);
       const qz = THREE.MathUtils.clamp(lz, -c.hz, c.hz);
       const dx = lx - qx;
@@ -86,19 +108,21 @@ export function resolveHorizontal(position, { radius, height, stepHeight }, coll
 }
 
 // Suelo bajo el jugador: terreno o parte superior de una caja alcanzable
-// (techo por debajo de feetY + stepHeight). `onStructure` indica suelo de piedra.
+// (techo por debajo de feetY + stepHeight). `surface` es la de la caja pisada (o null).
 export function groundInfo(position, { radius, stepHeight }, colliders, terrain) {
   let height = terrain.getHeight(position.x, position.z);
-  let onStructure = false;
+  let surface = null;
   const footRadiusSq = (radius * 0.6) ** 2;
   for (const c of colliders) {
-    if (c.maxY > position.y + stepHeight || c.maxY <= height) continue;
+    if (c.minY > position.y + stepHeight) continue;
+    const top = c.slope ? topAt(c, toLocal(c, position.x, position.z)[0]) : c.maxY;
+    if (top > position.y + stepHeight || top <= height) continue;
     if (distanceSq(c, position.x, position.z) < footRadiusSq) {
-      height = c.maxY;
-      onStructure = true;
+      height = top;
+      surface = c.surface ?? 'stone';
     }
   }
-  return { height, onStructure };
+  return { height, onStructure: surface !== null, surface };
 }
 
 // Altura del techo más bajo por encima de la cabeza (Infinity si no hay).
