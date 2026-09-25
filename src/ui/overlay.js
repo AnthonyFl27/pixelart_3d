@@ -8,6 +8,7 @@ const CONTROLS = [
   ['C / Ctrl', 'Bajar (vuelo)'],
   ['F', 'Modo vuelo'],
   ['M', 'Silenciar audio'],
+  ['T (mantener)', 'Acelerar el tiempo'],
   ['F3', 'Depuración'],
   ['Esc', 'Pausa'],
 ];

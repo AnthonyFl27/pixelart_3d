@@ -9,6 +9,7 @@ import { createMaterials } from './world/materials.js';
 import { Terrain } from './world/terrain.js';
 import { Sky } from './world/sky.js';
 import { Lighting } from './world/lighting.js';
+import { DayCycle } from './world/dayCycle.js';
 import { loadLevel } from './world/levelLoader.js';
 import { PlayerController } from './player/controller.js';
 import { Overlay } from './ui/overlay.js';
@@ -23,7 +24,7 @@ const canvas = document.getElementById('game');
 const renderer = createRenderer(canvas);
 const camera = createCamera();
 const scene = new THREE.Scene();
-scene.fog = new THREE.Fog(CONFIG.fog.color, CONFIG.fog.near, CONFIG.fog.far);
+scene.fog = new THREE.Fog(0x000000, CONFIG.fog.near, CONFIG.fog.far);
 const pipeline = new PixelPipeline(renderer, scene, camera);
 onResize((width, height) => pipeline.resize(width, height));
 
@@ -38,6 +39,14 @@ const sky = new Sky(textures.noise);
 scene.add(sky.mesh);
 
 const lighting = new Lighting(scene);
+
+// Hora inicial: config o parámetro de URL `?hora=19.5` (útil para probar).
+const dayCycle = new DayCycle();
+const startHour = parseFloat(new URLSearchParams(window.location.search).get('hora'));
+if (Number.isFinite(startHour)) {
+  dayCycle.time = (((startHour / 24) % 1) + 1) % 1;
+  dayCycle.update(0);
+}
 const { colliders } = loadLevel(level, { scene, terrain, materials });
 
 // --- Jugador, audio y UI -----------------------------------------------------
@@ -98,20 +107,24 @@ const loop = new GameLoop(renderer, {
   update(dt) {
     if (state === 'playing') {
       player.update(dt, input);
+      dayCycle.update(dt * (input.isDown('KeyT') ? CONFIG.dayCycle.fastForward : 1));
     } else {
       input.consumeMouse();
     }
     if (input.wasPressed('F3')) hud.toggle();
     if (input.wasPressed('KeyM')) audio.toggleMute();
 
-    sky.update(dt, camera);
-    lighting.update(player.position, camera);
+    const day = dayCycle.state;
+    sky.update(dt, camera, day);
+    lighting.update(player.position, camera, day);
+    scene.fog.color.copy(day.horizon);
     hud.update(dt, {
       position: player.position,
       mode: player.mode,
       internal: pipeline.internalSize,
       drawCalls: renderer.info.render.calls,
       muted: audio.muted,
+      clock: `${dayCycle.clock} ${day.phase}`,
     });
     input.endFrame();
   },

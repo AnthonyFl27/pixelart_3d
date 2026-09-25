@@ -1,4 +1,4 @@
-// HUD de depuración (F3): FPS, posición, modo, resolución interna y draw calls.
+// HUD de depuración (F3): FPS, hora, posición, modo, resolución interna y draw calls.
 // Incluye una mira central siempre visible durante el juego.
 
 export class Hud {
@@ -36,9 +36,10 @@ export class Hud {
     }
     if (this.element.hidden) return;
 
-    const { position: p, mode, internal, drawCalls, muted } = info;
+    const { position: p, mode, internal, drawCalls, muted, clock } = info;
     this.element.textContent = [
       `FPS   ${this.fps}`,
+      `HORA  ${clock}`,
       `POS   ${p.x.toFixed(1)} ${p.y.toFixed(1)} ${p.z.toFixed(1)}`,
       `MODO  ${mode}`,
       `RES   ${internal.width}x${internal.height} x${internal.scale}`,

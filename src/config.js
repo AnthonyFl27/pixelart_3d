@@ -7,7 +7,7 @@ export const CONFIG = {
     // Altura en píxeles del render interno; el ancho se deriva del aspect ratio.
     pixelHeight: 220,
     maxPixelRatio: 1,
-    clearColor: 0xa9cdef,
+    clearColor: 0x000000,
     // Ajusta la posición de la cámara a una rejilla de mundo para reducir el
     // "shimmering" de texels al moverse (1 / texelsPerUnit = un texel).
     cameraSnap: true,
@@ -26,17 +26,9 @@ export const CONFIG = {
   },
 
   lighting: {
-    sunColor: 0xfff2d6,
-    sunIntensity: 2.2,
-    // Dirección hacia el sol (desde el suelo). Debe coincidir con el sol del cielo.
-    sunDirection: { x: 0.6, y: 0.45, z: -0.5 },
-    skyColor: 0xdfeeff,
-    groundColor: 0x9a9a80,
-    hemiIntensity: 0.8,
+    // Colores e intensidades de sol, ambiente y relleno vienen de dayCycle.keyframes.
     // Luz de relleno casi horizontal desde la cámara: ilumina las caras
     // verticales (piedras a contraluz) sin aclarar las sombras del suelo.
-    fillColor: 0xe8eeff,
-    fillIntensity: 1.9,
     fillElevation: 0.15,
     fillSideOffset: 0.4,   // desplaza la luz hacia la derecha de la cámara
     toonSteps: 4,
@@ -50,24 +42,107 @@ export const CONFIG = {
   },
 
   fog: {
-    color: 0xa9cdef,
+    // El color de la niebla es el del horizonte del cielo en cada momento.
     near: 45,
     far: 175,
   },
 
   sky: {
-    zenithColor: 0x3f7fc4,
-    horizonColor: 0xa9cdef, // igual que la niebla para fundir el horizonte
-    cloudColor: 0xf4f8fb,
-    cloudShadeColor: 0xb9cde2,
     cloudScale: 0.12,
     cloudStretch: 0.2,     // < 1 estira las nubes en horizontal (vetas)
     cloudCoverage: 0.44,    // umbral del ruido: más alto = menos nubes
     cloudSteps: 5,          // niveles de opacidad de las nubes (look pixel)
     cloudWind: { x: 0.004, z: 0.0015 },
-    sunColor: 0xfff6e0,
     sunSize: 0.035,         // radio angular del disco solar (rad)
     sunGlowSize: 0.22,      // radio angular del halo (rad)
+    moonSize: 0.045,
+    moonColor: 0xe8ecf4,
+    moonCraterColor: 0xa9b0c0,
+    horizonGlowPower: 3,    // concentración del resplandor del horizonte del lado del sol
+    starDensity: 60,        // celdas por radian: más alto = estrellas más pequeñas y juntas
+    starProbability: 0.07,
+    starSize: 0.3,          // radio relativo a la celda
+  },
+
+  // Ciclo día/noche. time: 0 = medianoche, 0.25 = 6:00, 0.5 = mediodía, 0.75 = 18:00.
+  dayCycle: {
+    dayLength: 900,          // segundos reales por día completo (15 min)
+    startTime: 0.33,         // ≈ 8:00
+    fastForward: 40,         // multiplicador de tiempo con la tecla T
+    orbitTilt: 0.55,         // rad: inclina la órbita del sol (a mediodía queda hacia -Z)
+    orbitYaw: 0.35,          // rad: gira la órbita alrededor del eje Y
+    minLightElevation: 0.06, // altura mínima de la luz con sombras (estabilidad)
+    moonLightColor: 0xa8bcff,
+    phases: [
+      { from: 0, name: 'noche' },
+      { from: 3.5, name: 'madrugada' },
+      { from: 5.5, name: 'amanecer' },
+      { from: 7, name: 'mañana' },
+      { from: 12, name: 'tarde' },
+      { from: 17.5, name: 'atardecer' },
+      { from: 19, name: 'anochecer' },
+      { from: 20.5, name: 'noche' },
+    ],
+    // Keyframes por elevación del sol (componente Y de su dirección, -1 a 1).
+    // Colores en hex sRGB. sunLight/sunIntensity: luz del sol; moonIntensity: luz de luna.
+    keyframes: [
+      {
+        elevation: -1, // noche cerrada
+        zenith: 0x03061a, horizon: 0x0a1330, glow: 0x0a1330, sunDisc: 0xff8a40, sunLight: 0xff8a40,
+        sunIntensity: 0, moonIntensity: 0.5,
+        ambientSky: 0x34488a, ambientGround: 0x151a28, ambientIntensity: 0.3,
+        fill: 0x8fa6e0, fillIntensity: 0.25,
+        cloudLit: 0x232c48, cloudShade: 0x10162a, stars: 1,
+      },
+      {
+        elevation: -0.14, // madrugada / final del anochecer
+        zenith: 0x0b1540, horizon: 0x262b58, glow: 0x5a3a6a, sunDisc: 0xff8a40, sunLight: 0xff8a40,
+        sunIntensity: 0, moonIntensity: 0.45,
+        ambientSky: 0x44548f, ambientGround: 0x20242f, ambientIntensity: 0.4,
+        fill: 0x9aaae0, fillIntensity: 0.35,
+        cloudLit: 0x40406c, cloudShade: 0x1e2240, stars: 0.8,
+      },
+      {
+        elevation: -0.04, // crepúsculo: cielo rosado, horizonte encendido
+        zenith: 0x28397a, horizon: 0xb45e78, glow: 0xff8a50, sunDisc: 0xff7a3a, sunLight: 0xff7a3a,
+        sunIntensity: 0, moonIntensity: 0.25,
+        ambientSky: 0x8484b4, ambientGround: 0x38343c, ambientIntensity: 0.7,
+        fill: 0xffc0a0, fillIntensity: 0.8,
+        cloudLit: 0xf08a78, cloudShade: 0x5e5282, stars: 0.25,
+      },
+      {
+        elevation: 0.04, // salida/puesta del sol
+        zenith: 0x4868ae, horizon: 0xeea070, glow: 0xff7a30, sunDisc: 0xff9a50, sunLight: 0xff9a50,
+        sunIntensity: 1.2, moonIntensity: 0,
+        ambientSky: 0xd0b0a0, ambientGround: 0x6a6050, ambientIntensity: 0.75,
+        fill: 0xffd0b0, fillIntensity: 1.2,
+        cloudLit: 0xffb080, cloudShade: 0xb07a8a, stars: 0,
+      },
+      {
+        elevation: 0.15, // mañana / tarde
+        zenith: 0x4884c6, horizon: 0xc2d6ea, glow: 0xffd8b0, sunDisc: 0xffe6b0, sunLight: 0xffd9a8,
+        sunIntensity: 1.9, moonIntensity: 0,
+        ambientSky: 0xdfe8ff, ambientGround: 0x9a9a80, ambientIntensity: 0.8,
+        fill: 0xf0eeff, fillIntensity: 1.7,
+        cloudLit: 0xfff2e4, cloudShade: 0xc0c8d8, stars: 0,
+      },
+      {
+        elevation: 0.4, // pleno día
+        zenith: 0x3f7fc4, horizon: 0xa9cdef, glow: 0xa9cdef, sunDisc: 0xfff6e0, sunLight: 0xfff2d6,
+        sunIntensity: 2.2, moonIntensity: 0,
+        ambientSky: 0xdfeeff, ambientGround: 0x9a9a80, ambientIntensity: 0.8,
+        fill: 0xe8eeff, fillIntensity: 1.9,
+        cloudLit: 0xf4f8fb, cloudShade: 0xb9cde2, stars: 0,
+      },
+      {
+        elevation: 1,
+        zenith: 0x3f7fc4, horizon: 0xa9cdef, glow: 0xa9cdef, sunDisc: 0xfff6e0, sunLight: 0xfff2d6,
+        sunIntensity: 2.2, moonIntensity: 0,
+        ambientSky: 0xdfeeff, ambientGround: 0x9a9a80, ambientIntensity: 0.8,
+        fill: 0xe8eeff, fillIntensity: 1.9,
+        cloudLit: 0xf4f8fb, cloudShade: 0xb9cde2, stars: 0,
+      },
+    ],
   },
 
   postfx: {

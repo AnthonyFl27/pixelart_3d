@@ -89,14 +89,14 @@ Leyenda: `[ ]` pendiente · `[x]` completada · `[~]` en progreso
 - [x] Volumen/ritmo según velocidad y paso de aterrizaje
 
 ## Fase 9 — Ciclo día/noche
-- [ ] `dayCycle.js`: hora, fase y direcciones de sol/luna (día de 15 min configurable)
-- [ ] Keyframes de color por fase (cielo, horizonte, sol, ambiente, niebla) en `config.js`
-- [ ] Cielo: horizonte cálido del lado del sol en amanecer/atardecer
-- [ ] Sol y luna pixelados que salen y se ponen
-- [ ] Estrellas que aparecen, titilan y rotan
-- [ ] Nubes teñidas según la hora
-- [ ] Luz con sombras que sigue al sol o a la luna; ambiente, relleno y niebla por hora
-- [ ] HUD con hora y fase; tecla `T` para acelerar el tiempo
+- [x] `dayCycle.js`: hora, fase y direcciones de sol/luna (día de 15 min configurable)
+- [x] Keyframes de color por fase (cielo, horizonte, sol, ambiente, niebla) en `config.js`
+- [x] Cielo: horizonte cálido del lado del sol en amanecer/atardecer
+- [x] Sol y luna pixelados que salen y se ponen
+- [x] Estrellas que aparecen, titilan y rotan
+- [x] Nubes teñidas según la hora
+- [x] Luz con sombras que sigue al sol o a la luna; ambiente, relleno y niebla por hora
+- [x] HUD con hora y fase; tecla `T` para acelerar el tiempo
 
 ## Fase 10 — Inventario y antorcha
 - [ ] `inventory.js` con 5 ranuras, teclas `1`–`5`, rueda y `Q`

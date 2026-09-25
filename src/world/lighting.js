@@ -1,19 +1,18 @@
 import * as THREE from 'three';
 import { CONFIG } from '../config.js';
 
-// Sol direccional con sombras duras + luz hemisférica de ambiente + relleno.
+// Luz direccional con sombras duras (sol de día, luna de noche) + luz hemisférica
+// de ambiente + relleno desde la cámara. Colores e intensidades vienen del ciclo de día.
 // El área de sombras sigue al jugador y se ajusta a la rejilla de texels del
 // shadow map para que las sombras no "tiemblen" al moverse.
 export class Lighting {
   constructor(scene) {
-    const l = CONFIG.lighting;
-    const s = l.shadow;
+    const s = CONFIG.lighting.shadow;
 
-    this.hemi = new THREE.HemisphereLight(l.skyColor, l.groundColor, l.hemiIntensity);
+    this.hemi = new THREE.HemisphereLight(0xffffff, 0xffffff, 1);
     scene.add(this.hemi);
 
-    this.direction = new THREE.Vector3(l.sunDirection.x, l.sunDirection.y, l.sunDirection.z).normalize();
-    this.sun = new THREE.DirectionalLight(l.sunColor, l.sunIntensity);
+    this.sun = new THREE.DirectionalLight(0xffffff, 1);
     this.sun.castShadow = true;
     this.sun.shadow.mapSize.set(s.mapSize, s.mapSize);
     this.sun.shadow.bias = s.bias;
@@ -29,20 +28,31 @@ export class Lighting {
     scene.add(this.sun);
     scene.add(this.sun.target);
 
-    this.fill = new THREE.DirectionalLight(l.fillColor, l.fillIntensity);
+    this.fill = new THREE.DirectionalLight(0xffffff, 1);
     scene.add(this.fill);
     scene.add(this.fill.target);
     this.viewDirection = new THREE.Vector3();
 
-    // Base del espacio de luz para ajustar el centro a la rejilla de texels.
-    this.forward = this.direction.clone().negate();
-    this.right = new THREE.Vector3().crossVectors(this.forward, new THREE.Vector3(0, 1, 0)).normalize();
-    this.up = new THREE.Vector3().crossVectors(this.right, this.forward).normalize();
+    this.forward = new THREE.Vector3();
+    this.right = new THREE.Vector3();
+    this.up = new THREE.Vector3();
+    this.worldUp = new THREE.Vector3(0, 1, 0);
     this.texelSize = (2 * s.extent) / s.mapSize;
     this.center = new THREE.Vector3();
   }
 
-  update(focus, camera) {
+  update(focus, camera, day) {
+    this.hemi.color.copy(day.ambientSky);
+    this.hemi.groundColor.copy(day.ambientGround);
+    this.hemi.intensity = day.ambientIntensity;
+
+    this.sun.color.copy(day.lightColor);
+    this.sun.intensity = day.lightIntensity;
+
+    // Centro del área de sombras ajustado a la rejilla de texels en el espacio de la luz.
+    this.forward.copy(day.lightDirection).negate();
+    this.right.crossVectors(this.forward, this.worldUp).normalize();
+    this.up.crossVectors(this.right, this.forward).normalize();
     const t = this.texelSize;
     const r = Math.round(focus.dot(this.right) / t) * t;
     const u = Math.round(focus.dot(this.up) / t) * t;
@@ -53,10 +63,12 @@ export class Lighting {
       .addScaledVector(this.forward, f);
 
     this.sun.target.position.copy(this.center);
-    this.sun.position.copy(this.center).addScaledVector(this.direction, CONFIG.lighting.shadow.distance);
+    this.sun.position.copy(this.center).addScaledVector(day.lightDirection, CONFIG.lighting.shadow.distance);
     this.sun.target.updateMatrixWorld();
 
     // Relleno: desde detrás de la cámara, ligeramente a la derecha y elevado.
+    this.fill.color.copy(day.fill);
+    this.fill.intensity = day.fillIntensity;
     const { fillElevation, fillSideOffset } = CONFIG.lighting;
     camera.getWorldDirection(this.viewDirection);
     const dx = -this.viewDirection.x;
