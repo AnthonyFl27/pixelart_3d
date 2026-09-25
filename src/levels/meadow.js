@@ -28,6 +28,9 @@ export const MEADOW = {
   //   pillar      { width, height, depth, lean }
   //   fallenStone { length, width, thickness, tilt }
   //   boulder     { radius }
+  //   rubble      { radius, count, minSize, maxSize }   piedras pequeñas sin colisión
+  //   tree        { height, crownRadius, trunkRadius, lobes }
+  //   grove       { radius, count, minHeight, maxHeight } bosquecillo
   // Comunes: x, z, rotationY (rad), scale.
   structures: [
     // Anillo de trilitos (radio ≈ 14), orientados hacia el centro.
@@ -54,5 +57,36 @@ export const MEADOW = {
     { type: 'boulder', x: 6.5, z: 23.5, radius: 0.9 },
     { type: 'boulder', x: -19, z: 17, radius: 1.2 },
     { type: 'boulder', x: 22, z: -8, radius: 1.0 },
+    { type: 'boulder', x: -26, z: -12, radius: 1.4 },
+    { type: 'boulder', x: 30, z: 18, radius: 0.8 },
+    { type: 'boulder', x: 12, z: 34, radius: 1.1 },
+    { type: 'boulder', x: -14, z: 36, radius: 0.6 },
+    { type: 'boulder', x: -34, z: 2, radius: 0.9 },
+    { type: 'boulder', x: 18, z: -30, radius: 1.3 },
+    { type: 'boulder', x: -8, z: -32, radius: 0.7 },
+    { type: 'boulder', x: 40, z: -6, radius: 1.6 },
+
+    // Escombros al pie de las piedras.
+    { type: 'rubble', x: 2.2, z: 13.2, radius: 1.6, count: 9 },
+    { type: 'rubble', x: -2.6, z: 15.2, radius: 1.2, count: 6 },
+    { type: 'rubble', x: 12.1, z: 6.2, radius: 1.8, count: 8 },
+    { type: 'rubble', x: -12.5, z: 2.4, radius: 1.5, count: 7 },
+    { type: 'rubble', x: 7.0, z: -9.6, radius: 1.6, count: 8 },
+    { type: 'rubble', x: -9.4, z: -10.0, radius: 1.4, count: 6 },
+    { type: 'rubble', x: -4.0, z: 3.8, radius: 2.2, count: 10 },
+    { type: 'rubble', x: 5.5, z: -2.0, radius: 1.8, count: 7 },
+    { type: 'rubble', x: 15.0, z: 11.0, radius: 1.5, count: 6 },
+    { type: 'rubble', x: 0, z: 0, radius: 7, count: 18, maxSize: 0.2 },
+
+    // Árboles: uno solitario destacado, algunos sueltos y bosquecillos en el horizonte.
+    { type: 'tree', x: 30, z: -26, height: 9.5, crownRadius: 3.5, lobes: 6 },
+    { type: 'tree', x: -38, z: 30, height: 7 },
+    { type: 'tree', x: 46, z: 36, height: 6.5 },
+    { type: 'grove', x: -60, z: -90, radius: 14, count: 7 },
+    { type: 'grove', x: 40, z: -118, radius: 18, count: 9 },
+    { type: 'grove', x: 108, z: -40, radius: 12, count: 6 },
+    { type: 'grove', x: -118, z: -22, radius: 16, count: 8 },
+    { type: 'grove', x: -90, z: 72, radius: 12, count: 5 },
+    { type: 'grove', x: 94, z: 82, radius: 14, count: 6 },
   ],
 };

@@ -10,6 +10,9 @@ export function createTextures() {
     stone: createPaletteTexture('stone', CONFIG.textures.stone),
     grass: createPaletteTexture('grass', CONFIG.textures.grass),
     dirt: createPaletteTexture('dirt', CONFIG.textures.dirt),
+    bark: createPaletteTexture('bark', CONFIG.textures.bark),
+    leaves: createPaletteTexture('leaves', CONFIG.textures.leaves),
+    moss: createPaletteTexture('moss', CONFIG.textures.moss),
     noise: createNoiseTexture('noise', CONFIG.textures.noise),
   };
 }

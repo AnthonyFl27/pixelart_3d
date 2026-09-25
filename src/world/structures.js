@@ -4,9 +4,12 @@ import { createRandom, deriveSeed, ValueNoise2D } from '../core/noise.js';
 import { applyBoxUVs } from './geometryUtils.js';
 import { createBoxCollider } from '../player/collision.js';
 
-// Fábrica de estructuras de piedra. Cada tipo recibe los parámetros de su
-// entrada de nivel y devuelve piezas { geometry, position, rotationY }.
-// Las piezas se deforman ligeramente para parecer talladas a mano.
+// Fábrica de estructuras. Cada tipo recibe los parámetros de su entrada de nivel y
+// devuelve piezas:
+//   { geometry, position: [x, y, z], rotationY?, material?: 'stone' | 'bark' | 'leaves',
+//     collider?: boolean (true), groundAt?: [x, z] }
+// `groundAt` apoya la pieza en el terreno medido en ese punto local (piezas sueltas
+// o árboles de un bosquecillo sobre terreno irregular).
 
 const noise = new ValueNoise2D(deriveSeed(CONFIG.seed, 'structures'));
 
@@ -50,7 +53,45 @@ export const STRUCTURE_TYPES = {
   // Roca redondeada semienterrada.
   boulder(params, random) {
     const { radius = 0.8 } = params;
-    return [{ geometry: boulderGeometry(radius, random), position: [0, 0, 0] }];
+    return [{ geometry: blobGeometry(radius, random, 0.7, 1), position: [0, 0, 0] }];
+  },
+
+  // Piedras pequeñas y escombros dispersos en un círculo (sin colisión).
+  rubble(params, random) {
+    const { radius = 1.5, count = 8, minSize = 0.1, maxSize = 0.32 } = params;
+    return Array.from({ length: count }, () => {
+      const angle = random() * Math.PI * 2;
+      const distance = Math.sqrt(random()) * radius;
+      const x = Math.cos(angle) * distance;
+      const z = Math.sin(angle) * distance;
+      const size = minSize + random() * (maxSize - minSize);
+      return {
+        geometry: blobGeometry(size, random, 0.6, 0),
+        position: [x, 0, z],
+        rotationY: random() * Math.PI * 2,
+        collider: false,
+        groundAt: [x, z],
+      };
+    });
+  },
+
+  // Árbol: tronco facetado y copa de lóbulos.
+  tree(params, random) {
+    return treePieces(params, random, 0, 0);
+  },
+
+  // Bosquecillo de árboles en un círculo (para el horizonte).
+  grove(params, random) {
+    const { radius = 8, count = 6, minHeight = 5, maxHeight = 9 } = params;
+    const pieces = [];
+    for (let i = 0; i < count; i++) {
+      const angle = random() * Math.PI * 2;
+      const distance = Math.sqrt(random()) * radius;
+      const height = minHeight + random() * (maxHeight - minHeight);
+      pieces.push(...treePieces({ height, crownRadius: height * 0.38 }, random,
+        Math.cos(angle) * distance, Math.sin(angle) * distance));
+    }
+    return pieces;
   },
 };
 
@@ -66,11 +107,12 @@ export function createStructure(entry, index, { terrain, materials }) {
   group.name = `${entry.type}-${index}`;
 
   const pieces = build(entry, random).map((piece) => {
-    const mesh = new THREE.Mesh(piece.geometry, materials.stone);
+    const mesh = new THREE.Mesh(piece.geometry, materials[piece.material ?? 'stone']);
     mesh.position.fromArray(piece.position);
     mesh.rotation.y = piece.rotationY ?? 0;
     mesh.castShadow = true;
     mesh.receiveShadow = true;
+    mesh.userData.piece = piece;
     group.add(mesh);
     return mesh;
   });
@@ -80,7 +122,20 @@ export function createStructure(entry, index, { terrain, materials }) {
   group.position.set(entry.x, lowestGroundUnder(group, entry, terrain) - CONFIG.structures.sink * scale, entry.z);
   group.updateMatrixWorld(true);
 
-  const colliders = pieces.map((mesh) => createBoxCollider(mesh, group));
+  // Apoyar en el terreno las piezas con `groundAt`.
+  const local = new THREE.Vector3();
+  for (const mesh of pieces) {
+    const { groundAt } = mesh.userData.piece;
+    if (!groundAt) continue;
+    local.set(groundAt[0], 0, groundAt[1]).applyMatrix4(group.matrixWorld);
+    const ground = terrain.getHeight(local.x, local.z);
+    mesh.position.y += (ground - group.position.y) / scale - CONFIG.structures.sink * 0.5;
+  }
+  group.updateMatrixWorld(true);
+
+  const colliders = pieces
+    .filter((mesh) => mesh.userData.piece.collider !== false)
+    .map((mesh) => createBoxCollider(mesh, group));
   return { group, colliders };
 }
 
@@ -98,20 +153,51 @@ function lowestGroundUnder(group, entry, terrain) {
   return min;
 }
 
+function treePieces({ height = 7, trunkRadius, crownRadius, lobes = 6 }, random, x, z) {
+  const trunkHeight = height * 0.42;
+  const radius = trunkRadius ?? height * 0.06;
+  const crown = crownRadius ?? height * 0.4;
+  const trunkLength = trunkHeight + crown * 0.6;
+  const trunk = new THREE.CylinderGeometry(radius * 0.6, radius, trunkLength, 6, 3);
+  trunk.translate(0, trunkLength / 2, 0);
+  applyBoxUVs(trunk);
+  const bend = (random() - 0.5) * 0.4;
+  deform(trunk, random, (px, py, pz) => [px + bend * (py / trunkLength) ** 2, py, pz]);
+
+  const pieces = [{ geometry: trunk, position: [x, 0, z], material: 'bark', groundAt: [x, z] }];
+  for (let i = 0; i < lobes; i++) {
+    const center = i === 0;
+    const angle = (i / lobes) * Math.PI * 2 + random() * 0.8;
+    const distance = center ? 0 : crown * (0.55 + random() * 0.3);
+    const lobe = crown * (center ? 0.75 : 0.45 + random() * 0.25);
+    pieces.push({
+      geometry: blobGeometry(lobe, random, 0.8, 0),
+      position: [
+        x + Math.cos(angle) * distance + bend,
+        trunkHeight + crown * (center ? 0.55 : 0.1 + random() * 0.6),
+        z + Math.sin(angle) * distance,
+      ],
+      material: 'leaves',
+      collider: false,
+      groundAt: [x, z],
+    });
+  }
+  return pieces;
+}
+
 // --- Geometrías -------------------------------------------------------------
 
 function pillarGeometry(width, height, depth, random) {
-  return stoneBoxGeometry(width, height, depth, random, CONFIG.structures.taper, true);
+  return stoneBoxGeometry(width, height, depth, random, CONFIG.structures.taper);
 }
 
-// Caja subdividida con UVs de densidad constante y deformación por ruido.
-// Si `fromBase`, el origen queda en la base (y = 0); si no, en el centro de la cara inferior.
-function stoneBoxGeometry(width, height, depth, random, taper, fromBase = true) {
+// Caja subdividida apoyada en y = 0, con UVs de densidad constante y deformación por ruido.
+function stoneBoxGeometry(width, height, depth, random, taper) {
   const segX = Math.max(1, Math.round(width * 1.5));
   const segY = Math.max(1, Math.round(height * 1.5));
   const segZ = Math.max(1, Math.round(depth * 1.5));
   const geometry = new THREE.BoxGeometry(width, height, depth, segX, segY, segZ);
-  geometry.translate(0, fromBase ? height / 2 : 0, 0);
+  geometry.translate(0, height / 2, 0);
   applyBoxUVs(geometry);
   deform(geometry, random, (x, y, z) => {
     const s = 1 - taper * THREE.MathUtils.clamp(y / height, 0, 1);
@@ -120,17 +206,19 @@ function stoneBoxGeometry(width, height, depth, random, taper, fromBase = true) 
   return geometry;
 }
 
-function boulderGeometry(radius, random) {
-  const geometry = new THREE.IcosahedronGeometry(radius, 1);
+// Bola facetada deformada (rocas, piedras pequeñas, lóbulos de copa).
+// squash aplasta en Y; detail = subdivisiones del icosaedro.
+function blobGeometry(radius, random, squash, detail) {
+  const geometry = new THREE.IcosahedronGeometry(radius, detail);
   const ox = random() * 100;
   const oz = random() * 100;
   const position = geometry.attributes.position;
   const v = new THREE.Vector3();
   for (let i = 0; i < position.count; i++) {
     v.fromBufferAttribute(position, i);
-    const n = noise.noise(v.x * 1.7 + ox, (v.y + v.z) * 1.7 + oz);
+    const n = noise.noise(v.x / radius * 1.7 + ox, (v.y + v.z) / radius * 1.7 + oz);
     v.multiplyScalar(1 + (n - 0.5) * 0.45);
-    v.y = v.y * 0.7 + radius * 0.35;
+    v.y = v.y * squash + radius * 0.35;
     position.setXYZ(i, v.x, v.y, v.z);
   }
   geometry.computeVertexNormals();

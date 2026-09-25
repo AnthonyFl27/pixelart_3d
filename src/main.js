@@ -11,6 +11,7 @@ import { Sky } from './world/sky.js';
 import { Lighting } from './world/lighting.js';
 import { DayCycle } from './world/dayCycle.js';
 import { loadLevel } from './world/levelLoader.js';
+import { Vegetation } from './world/vegetation.js';
 import { PlayerController } from './player/controller.js';
 import { Overlay } from './ui/overlay.js';
 import { Hud } from './ui/hud.js';
@@ -43,19 +44,26 @@ scene.add(sky.mesh);
 
 const lighting = new Lighting(scene);
 
-// Hora inicial: config o parámetro de URL `?hora=19.5` (útil para probar).
+// Parámetros de URL para probar: `?hora=19.5` y `?pos=x,z,yaw` (posición inicial).
+const params = new URLSearchParams(window.location.search);
 const dayCycle = new DayCycle();
-const startHour = parseFloat(new URLSearchParams(window.location.search).get('hora'));
+const startHour = parseFloat(params.get('hora'));
 if (Number.isFinite(startHour)) {
   dayCycle.time = (((startHour / 24) % 1) + 1) % 1;
   dayCycle.update(0);
 }
 const { colliders } = loadLevel(level, { scene, terrain, materials });
+const vegetation = new Vegetation(level, terrain, colliders, materials.gradientMap);
+scene.add(...vegetation.meshes);
 
 // --- Jugador, audio y UI -----------------------------------------------------
 const input = new Input(canvas);
 const audio = new AmbientAudio();
-const player = new PlayerController(camera, terrain, colliders, level.spawn, {
+const [spawnX, spawnZ, spawnYaw] = (params.get('pos') ?? '').split(',').map(parseFloat);
+const spawn = Number.isFinite(spawnX) && Number.isFinite(spawnZ)
+  ? { x: spawnX, z: spawnZ, yaw: Number.isFinite(spawnYaw) ? spawnYaw : 0 }
+  : level.spawn;
+const player = new PlayerController(camera, terrain, colliders, spawn, {
   onStep: (surface) => audio.step(surface),
 });
 
@@ -126,6 +134,7 @@ const loop = new GameLoop(renderer, {
 
     const day = dayCycle.state;
     sky.update(dt, camera, day);
+    vegetation.update(dt);
     lighting.update(player.position, camera, day);
     scene.fog.color.copy(day.horizon);
     torch.update(dt, { active: inventory.activeItem?.id === 'torch', player, camera, day });

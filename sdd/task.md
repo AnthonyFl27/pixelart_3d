@@ -106,11 +106,11 @@ Leyenda: `[ ]` pendiente · `[x]` completada · `[~]` en progreso
 - [x] Luz cálida con parpadeo que ilumina el entorno (sin sombras, siempre en escena)
 
 ## Fase 11 — Entorno
-- [ ] Tipos `rubble`/`pebbles` y más rocas dispersas
-- [ ] Musgo/liquen en las piedras
-- [ ] Tipo `tree` y árboles en el horizonte (uno solitario destacado)
-- [ ] Pasto alto instanciado con viento, fuera del camino y estructuras
-- [ ] Ampliar `meadow.js` con los nuevos elementos
+- [x] Tipos `rubble`/`pebbles` y más rocas dispersas
+- [x] Musgo/liquen en las piedras
+- [x] Tipo `tree` y árboles en el horizonte (uno solitario destacado)
+- [x] Pasto alto instanciado con viento, fuera del camino y estructuras
+- [x] Ampliar `meadow.js` con los nuevos elementos
 
 ## Fase 12 — Pájaros
 - [ ] Pájaros instanciados con aleteo y planeo

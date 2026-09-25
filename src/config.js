@@ -200,6 +200,30 @@ export const CONFIG = {
       speckleLight: 0.02,
       speckleDark: 0.04,
     },
+    bark: {
+      colors: [0x3a2818, 0x4e3620, 0x62462a, 0x765634],
+      frequency: 2,
+      octaves: 3,
+      blotchWeight: 0.45,
+      speckleLight: 0.03,
+      speckleDark: 0.06,
+    },
+    leaves: {
+      colors: [0x23401a, 0x2f5420, 0x3f6a26, 0x55822e, 0x6e9a3a],
+      frequency: 5,
+      octaves: 3,
+      blotchWeight: 0.5,
+      speckleLight: 0.06,
+      speckleDark: 0.08,
+    },
+    moss: {
+      colors: [0x3d5a1e, 0x4f6e24, 0x62802c, 0x7a9636],
+      frequency: 4,
+      octaves: 3,
+      blotchWeight: 0.5,
+      speckleLight: 0.04,
+      speckleDark: 0.05,
+    },
     // Textura de ruido suave (escala de grises) para nubes y borde del camino.
     noise: {
       size: 128,
@@ -228,6 +252,35 @@ export const CONFIG = {
     roughness: 0.07,       // deformación de vértices (u)
     roughnessFrequency: 1.3,
     taper: 0.12,           // estrechamiento de los pilares hacia arriba (0-1)
+  },
+
+  // Musgo/liquen sobre las piedras: aparece en caras hacia arriba, en el lado
+  // norte (+Z, a la sombra) y cerca del suelo, con borde irregular por ruido.
+  moss: {
+    upWeight: 0.5,
+    northWeight: 0.2,
+    groundWeight: 0.35,    // cerca de y = 0
+    noiseWeight: 1.0,
+    noiseScale: 0.45,
+    threshold: 0.93,       // más alto = menos musgo
+  },
+
+  // Pasto alto y flores (InstancedMesh). Se colocan alrededor del centro del nivel.
+  vegetation: {
+    radius: 85,
+    grassCount: 9000,
+    grassHeight: [0.35, 0.8],
+    grassBlades: 5,
+    grassBaseColor: 0x5a8424,
+    grassTipColor: 0xb4d25a,
+    clusterScale: 0.06,    // frecuencia de las manchas de pasto alto
+    clusterThreshold: 0.5, // más alto = manchas más pequeñas
+    sparseChance: 0.12,    // probabilidad de mata suelta fuera de las manchas
+    flowerCount: 700,
+    flowerColors: [0xf4f0e0, 0xf2d24a, 0xb58ad8, 0xe86a5a],
+    pathMargin: 0.7,       // distancia mínima al camino (u)
+    windStrength: 0.12,
+    windSpeed: 1.6,
   },
 
   player: {
