@@ -9,7 +9,8 @@ import { createRoomImpulse } from './acoustics.js';
 //   → seco (bajo) + reverberación de habitación (convolución) + eco con realimentación
 //   filtrada → amortiguación de zona (paso bajo fuera de la cabaña) → salida.
 // La canción se reproduce por streaming (el elemento <audio> no decodifica la pista
-// entera). Si el archivo falla, `missing` pasa a true (`failure` dice por qué) y la radio
+// entera). `tune(duration, src)` cambia de pista (CONFIG.radio.tracks) y cada pista sigue
+// donde se quedó; al acabar una, `ended` pasa a true (con una sola pista, bucle). Si el archivo falla, `missing` pasa a true (`failure` dice por qué) y la radio
 // solo emite estática; al volver a encenderla se reintenta la carga. Si el navegador
 // bloquea la reproducción fuera de un gesto del usuario, se reintenta con la siguiente
 // tecla o clic.
@@ -22,7 +23,9 @@ export class RadioChain {
     this.failure = null;   // motivo del fallo del archivo (HUD)
     this.blocked = false;  // play() rechazado por la política de reproducción automática
     this.wantsPlay = false;
-    this.requested = false;
+    this.src = null;           // pista cargada
+    this.positions = new Map(); // src → segundo donde se quedó
+    this.ended = false;
     this.pauseTimer = 0;
     this.popTimer = 0;
     this.sweepTimer = 0;
@@ -87,9 +90,11 @@ export class RadioChain {
     this.mix.connect(highpass).connect(mid).connect(lowpass).connect(shaper).connect(this.panner);
 
     // Música: elemento <audio> en streaming.
+    const { tracks, autoAdvance } = CONFIG.radio;
     this.element = new Audio();
-    this.element.loop = true;
+    this.element.loop = !autoAdvance || tracks.length < 2;
     this.element.preload = 'none';
+    this.element.addEventListener('ended', () => { this.ended = true; });
     this.element.addEventListener('error', () => {
       this.missing = true;
       this.failure = MEDIA_ERRORS[this.element.error?.code] ?? 'error';
@@ -122,20 +127,14 @@ export class RadioChain {
     this.pops.connect(this.mix);
   }
 
-  // Estática de sintonización durante `duration` s (la música sigue en silencio).
-  tune(duration) {
+  // Estática de sintonización durante `duration` s (la música sigue en silencio) hacia la
+  // pista `src`.
+  tune(duration, src) {
     const s = CONFIG.audio.radio.static;
     const ctx = this.ctx;
     const now = ctx.currentTime;
-    if (!this.requested || this.missing) {
-      // Empieza a cargar la canción mientras suena la estática (o reintenta tras un fallo).
-      this.requested = true;
-      this.missing = false;
-      this.failure = null;
-      this.element.src = CONFIG.radio.src;
-      this.element.preload = 'auto';
-      this.element.load();
-    }
+    // Carga la pista mientras suena la estática (o la reintenta tras un fallo).
+    if (src !== this.src || this.missing || this.ended) this.load(src);
     this.pauseTimer = 0;
     this.crackling = false;
     this.drifting = false;
@@ -162,6 +161,25 @@ export class RadioChain {
     }
     const clicks = Math.round(range(s.clicks));
     for (let i = 0; i < clicks; i++) this.pop(now + Math.random() * duration, s.clickGain * (0.3 + Math.random() * 0.7));
+  }
+
+  // Cambia el elemento a la pista `src` y la lleva al punto donde se quedó.
+  load(src) {
+    const element = this.element;
+    if (this.src && !this.missing) this.positions.set(this.src, this.ended ? 0 : element.currentTime);
+    this.src = src;
+    this.missing = false;
+    this.failure = null;
+    this.ended = false;
+    element.src = src;
+    element.preload = 'auto';
+    element.load();
+    const start = this.positions.get(src) ?? 0;
+    if (start > 0) {
+      element.addEventListener('loadedmetadata', () => {
+        if (this.src === src) element.currentTime = start;
+      }, { once: true });
+    }
   }
 
   // Tras la sintonización: fundido cruzado hacia la canción, con crepitado leve.

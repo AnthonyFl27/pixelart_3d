@@ -949,11 +949,18 @@ export const CONFIG = {
     lightOffset: 1.1,      // delante de la pantalla (u): ilumina la sala, no la pared de detrás
   },
 
-  // Radio de válvulas (src/interaction/radio.js): luz 2 del interior. La canción no se
-  // versiona (.gitignore): cada copia local coloca el archivo en `src`.
+  // Radio de válvulas (src/interaction/radio.js): luz 2 del interior. Las canciones no se
+  // versionan (.gitignore): cada copia local coloca los archivos de `tracks`. El navegador no
+  // puede listar la carpeta, así que cada .mp3 nuevo se añade aquí. Con la radio encendida,
+  // `CONFIG.interaction.altKey` pasa a la siguiente canción.
   radio: {
-    src: 'assets/audio/song.mp3',
+    tracks: [
+      'assets/audio/song.mp3',
+    ],
+    autoAdvance: true,     // al acabar una canción pasa a la siguiente (con una sola, bucle)
     tuningTime: 3,         // segundos de estática de sintonización al encender
+    switchTime: 1.2,       // segundos de estática al cambiar de canción
+    dialRange: [0.2, 0.9], // tramo del dial donde se reparten las emisoras (una por canción)
     crossfade: 1.4,        // fundido de la estática a la canción
     offFade: 0.18,         // fundido al apagar
     dialFade: 0.25,        // el dial se ilumina y se apaga en este tiempo
@@ -980,6 +987,7 @@ export const CONFIG = {
     reach: 2.2,            // alcance (u) desde la cámara
     seatedReach: 4.8,      // alcance sentado (encender la tele desde el sofá)
     key: 'KeyE',
+    altKey: 'KeyN',        // acción secundaria del objeto apuntado (cambiar de canción en la radio)
     occlusionMargin: 0.05, // un colisionador tapa al objeto si está este tanto por delante (u)
   },
 

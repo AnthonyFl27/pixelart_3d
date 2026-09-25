@@ -43,7 +43,7 @@ Abrir `http://localhost:8080`. También funciona tal cual en GitHub Pages.
 pixelart_3d/
 ├── index.html                  # Punto de entrada: importmap, canvas, contenedor de UI y errores de arranque
 ├── serve.py                    # Servidor estático de desarrollo sin caché
-├── assets/audio/               # song.mp3 (local, no versionado: ver README.md de la carpeta)
+├── assets/audio/               # Canciones .mp3 de la radio (locales, no versionadas: ver README.md de la carpeta)
 ├── src/
 │   ├── main.js                 # Arranque: motor, mundo, jugador, UI, estados y bucle
 │   ├── config.js               # TODOS los parámetros ajustables
@@ -150,7 +150,7 @@ pixelart_3d/
   `squelch`, `bubbles`); la superficie sale del colisionador (`surface` de la pieza), del mapa de suelo o del agua.
 - **Acústica:** los sonidos nuevos van al bus `local` (reverb de habitación dentro) o `outdoor` (amortiguado dentro)
   de `src/audio/acoustics.js`; parámetros en `CONFIG.audio.acoustics`. Las puertas declaran su `zone`.
-- **Radio:** tipo de mueble `radio` (declara el interactivo `radio`); la canción está en `CONFIG.radio.src`
+- **Radio:** tipo de mueble `radio` (declara el interactivo `radio`); las canciones están en `CONFIG.radio.tracks`
   y el sonido (estática, EQ, reverb, eco, amortiguación fuera de su zona) en `CONFIG.audio.radio`.
 - **Hora del día:** keyframes de color y luz en `CONFIG.dayCycle.keyframes`; duración en `dayLength`.
 - **Relieve:** añadir entradas a `terrainFeatures` en el nivel (`hollow`, `mound`, `ridge`, `gully`, `dirtPile`,
@@ -197,8 +197,9 @@ pixelart_3d/
   puertas cerradas, ≈ 0,45 con una abierta). Porche y suelo de la cabaña suenan a madera (`SUELO wood`); vadear
   en `?pos=-60,40,0.1` (chapoteo). Sentarse y levantarse suenan a tela (sofá) o madera (sillas); la lámpara hace clic.
 - Radio: `?pos=-79.5,10.1,0` (delante del aparador, mirar abajo). `E` enciende: estática ≈ 3 s y la canción
-  (`F3`: `RADIO estática` → `sonando`); sin `assets/audio/song.mp3`, `sin archivo (estática)`. Apagar y
-  encender sigue la canción; `Esc` la pausa. Fuera de la cabaña se oye más grave, y menos con la puerta cerrada.
+  (`F3`: `RADIO estática` → `sonando 1/N archivo`); sin el archivo, `estática (sin archivo…)`. Con varias
+  canciones en `CONFIG.radio.tracks`, `N` pasa a la siguiente (estática breve) y al acabar una suena la siguiente.
+  Apagar y encender sigue la canción; `Esc` la pausa. Fuera de la cabaña se oye más grave, y menos con la puerta cerrada.
 - Mantener `T` acelera el tiempo.
 - Revisar visualmente contra la imagen/video de referencia.
 - Comprobar controles: movimiento, cámara, salto, colisión con estructuras, pausa, inventario, antorcha, puertas,

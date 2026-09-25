@@ -12,7 +12,9 @@ import { Radio } from './radio.js';
 //   { meshes: Object3D[] (lo que apunta el rayo), object?: Object3D (se añade a la escena),
 //     collider?: caja de colisión (se añade a los colisionadores del jugador),
 //     prompt(context) -> texto de la acción, { text, notice } (aviso sin acción) o null,
-//     interact(context), update?(dt, context), removed? (true: se retira tras interactuar) }
+//     interact(context), update?(dt, context), removed? (true: se retira tras interactuar),
+//     altInteract?(context): acción secundaria con CONFIG.interaction.altKey; el aviso la
+//     muestra con { text, alt: { key, text } } }
 // Los objetos se crean a partir de datos del nivel con INTERACTABLE_TYPES: añadir un tipo
 // nuevo no requiere tocar el bucle principal.
 
@@ -79,7 +81,7 @@ export class Interaction {
   update(dt, input, context) {
     for (const item of this.items) item.update?.(dt, context);
     const { player } = context;
-    const { reach, seatedReach, key } = CONFIG.interaction;
+    const { reach, seatedReach, key, altKey } = CONFIG.interaction;
     this.target = this.findTarget(player?.seat ? seatedReach : reach);
     const pressed = input.wasPressed(key);
     if (!this.target) {
@@ -88,6 +90,7 @@ export class Interaction {
       return null;
     }
     if (pressed) this.target.interact(context);
+    else if (input.wasPressed(altKey)) this.target.altInteract?.(context);
     if (this.target.removed) this.remove(this.target);
     this.prompt = this.target?.prompt(context) ?? null;
     return this.prompt;

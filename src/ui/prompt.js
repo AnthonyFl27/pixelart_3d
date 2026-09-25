@@ -1,7 +1,8 @@
 // Punto de mira pixel art y aviso de interacción (`[E] Abrir puerta`) bajo él.
 // La mira se resalta cuando apunta a un objeto interactivo. Un aviso sin acción
 // (`{ text, notice: true }`, p. ej. `Inventario lleno`) se muestra sin la tecla, y
-// `{ text, key }` muestra otra tecla (`[R] Recargar`).
+// `{ text, key }` muestra otra tecla (`[R] Recargar`). `alt: { key, text }` añade una
+// segunda acción al lado (`[E] Apagar radio [N] Cambiar canción`).
 
 export class Prompt {
   constructor(root, key = 'E') {
@@ -13,15 +14,17 @@ export class Prompt {
     this.element = document.createElement('div');
     this.element.className = 'prompt';
     this.element.hidden = true;
-    this.element.innerHTML = `<span class="prompt__key">${key}</span><span class="prompt__text"></span>`;
-    this.text = this.element.querySelector('.prompt__text');
-    this.keyElement = this.element.querySelector('.prompt__key');
+    this.element.innerHTML = `<span class="prompt__key">${key}</span><span class="prompt__text"></span>`
+      + '<span class="prompt__key prompt__alt"></span><span class="prompt__text prompt__alt"></span>';
+    [this.keyElement, this.altKeyElement] = this.element.querySelectorAll('.prompt__key');
+    [this.text, this.altText] = this.element.querySelectorAll('.prompt__text');
     this.defaultKey = key;
     root.appendChild(this.element);
 
     this.playing = false;
     this.current = null;
     this.notice = false;
+    this.alt = null;
   }
 
   setPlaying(playing) {
@@ -35,10 +38,12 @@ export class Prompt {
     const text = typeof prompt === 'string' ? prompt : prompt?.text ?? null;
     const notice = Boolean(prompt?.notice);
     const key = prompt?.key ?? this.defaultKey;
-    if (text === this.current && notice === this.notice && key === this.key) return;
+    const alt = prompt?.alt ? `${prompt.alt.key}\n${prompt.alt.text}` : null;
+    if (text === this.current && notice === this.notice && key === this.key && alt === this.alt) return;
     this.current = text;
     this.notice = notice;
     this.key = key;
+    this.alt = alt;
     this.render();
   }
 
@@ -49,5 +54,9 @@ export class Prompt {
     this.element.hidden = !visible;
     this.text.textContent = this.current ?? '';
     this.keyElement.textContent = this.key ?? this.defaultKey;
+    const [altKey, altText] = this.alt?.split('\n') ?? [];
+    this.altKeyElement.hidden = this.altText.hidden = !this.alt;
+    this.altKeyElement.textContent = altKey ?? '';
+    this.altText.textContent = altText ?? '';
   }
 }

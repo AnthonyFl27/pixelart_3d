@@ -92,7 +92,8 @@
 
 .hud[hidden],
 .crosshair[hidden],
-.prompt[hidden] {
+.prompt[hidden],
+.prompt__alt[hidden] {
   display: none;
 }
 
@@ -139,6 +140,10 @@
   font-size: 10px;
   color: var(--ui-text);
   white-space: nowrap;
+}
+
+.prompt__key.prompt__alt {
+  margin-left: 6px;
 }
 
 .prompt--notice .prompt__key {

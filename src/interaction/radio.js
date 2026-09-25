@@ -6,11 +6,14 @@ import { createHitBox } from './hitBox.js';
 // suena la estática de sintonización (la aguja recorre el dial) y después entra la
 // canción con un fundido; `E` de nuevo la apaga con un clic y un fundido breve. Al volver
 // a encender se repite la estática y la canción sigue donde se quedó. Sin archivo, solo
-// estática. El sonido lo genera RadioChain (src/audio/radioChain.js).
+// estática. Con varias canciones (CONFIG.radio.tracks), la tecla secundaria
+// (CONFIG.interaction.altKey) sintoniza la siguiente: estática breve y la aguja salta a su
+// emisora del dial; al acabar una canción pasa sola a la siguiente (`autoAdvance`).
+// El sonido lo genera RadioChain (src/audio/radioChain.js).
 // Estados: 'off' | 'tuning' | 'playing' | 'static' (sin archivo).
 // Datos: { position: centro del dial, rotationY, dialSize: [ancho, alto], hitSize, hitOffset }.
 
-const PROMPTS = { on: 'Encender radio', off: 'Apagar radio' };
+const PROMPTS = { on: 'Encender radio', off: 'Apagar radio', next: 'Cambiar canción' };
 const STATUS = { off: 'apagada', tuning: 'estática', playing: 'sonando', static: 'estática' };
 
 export class Radio {
@@ -45,7 +48,9 @@ export class Radio {
     this.timer = 0;
     this.glow = 0;         // 0 dial apagado … 1 iluminado
     this.tuning = 0.5;     // posición de la aguja (0-1)
-    this.station = 0.62;   // donde queda la aguja con la emisora sintonizada
+    this.tracks = r.tracks;
+    this.track = 0;        // índice de la canción en `tracks`
+    this.station = this.stationOf(this.track); // donde queda la aguja con la emisora sintonizada
     this.sweep = { from: 0, to: 0, time: 0, length: 1 };
     this.chain = null;
     this.hasAudio = false;
@@ -57,16 +62,29 @@ export class Radio {
     return this.state !== 'off';
   }
 
+  get src() {
+    return this.tracks[this.track];
+  }
+
   // Estado para el HUD.
   get status() {
+    const track = `${this.track + 1}/${this.tracks.length} ${this.src.split('/').pop()}`;
     if (this.isOn && !this.hasAudio) return `${STATUS[this.state]} (sin audio)`;
-    if (this.state === 'static') return `${STATUS.static} (${this.chain?.failure ?? 'sin archivo'}: ${CONFIG.radio.src})`;
-    if (this.state === 'playing' && this.chain?.blocked) return `${STATUS.playing} (bloqueada: pulsa una tecla)`;
-    return STATUS[this.state];
+    if (this.state === 'static') return `${STATUS.static} (${this.chain?.failure ?? 'sin archivo'}: ${this.src})`;
+    if (this.state === 'playing' && this.chain?.blocked) return `${STATUS.playing} ${track} (bloqueada: pulsa una tecla)`;
+    return this.isOn ? `${STATUS[this.state]} ${track}` : STATUS[this.state];
   }
 
   prompt() {
-    return this.isOn ? PROMPTS.off : PROMPTS.on;
+    if (!this.isOn) return PROMPTS.on;
+    if (this.tracks.length < 2) return PROMPTS.off;
+    return { text: PROMPTS.off, alt: { key: CONFIG.interaction.altKey.replace('Key', ''), text: PROMPTS.next } };
+  }
+
+  // Emisora de la canción `index`: las canciones se reparten por el dial.
+  stationOf(index) {
+    const [from, to] = CONFIG.radio.dialRange;
+    return from + (to - from) * (index + 0.5) / this.tracks.length;
   }
 
   interact({ audio }) {
@@ -78,9 +96,28 @@ export class Radio {
       this.chain?.stop(CONFIG.radio.offFade);
       return;
     }
+    this.tuneTo(this.track, CONFIG.radio.tuningTime);
+  }
+
+  // Tecla secundaria: con la radio encendida, sintoniza la siguiente canción.
+  altInteract({ audio }) {
+    if (!this.isOn || this.tracks.length < 2) return;
+    audio?.playSfx('click', this.soundPosition);
+    this.next();
+  }
+
+  next() {
+    this.tuneTo((this.track + 1) % this.tracks.length, CONFIG.radio.switchTime);
+  }
+
+  // Estática durante `time` s mientras la aguja busca la emisora de la canción `index`.
+  tuneTo(index, time) {
+    this.track = index;
+    this.station = this.stationOf(index);
     this.state = 'tuning';
-    this.timer = CONFIG.radio.tuningTime;
-    this.chain?.tune(this.timer);
+    this.timer = time;
+    this.sweep.time = this.sweep.length;
+    this.chain?.tune(time, this.src);
   }
 
   update(dt, { audio } = {}) {
@@ -97,6 +134,8 @@ export class Radio {
           this.chain?.holdStatic();
         }
       }
+    } else if (this.state === 'playing' && this.chain?.ended) {
+      this.next();
     } else if (this.state === 'playing' && this.chain?.missing) {
       // El archivo falló después de empezar (p. ej. no existe): solo estática.
       this.state = 'static';
