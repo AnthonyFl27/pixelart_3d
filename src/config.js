@@ -952,7 +952,7 @@ export const CONFIG = {
   // Radio de válvulas (src/interaction/radio.js): luz 2 del interior. La canción no se
   // versiona (.gitignore): cada copia local coloca el archivo en `src`.
   radio: {
-    src: 'assets/audio/radio.mp3',
+    src: 'assets/audio/song.mp3',
     tuningTime: 3,         // segundos de estática de sintonización al encender
     crossfade: 1.4,        // fundido de la estática a la canción
     offFade: 0.18,         // fundido al apagar
